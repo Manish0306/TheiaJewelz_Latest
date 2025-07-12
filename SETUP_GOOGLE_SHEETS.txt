@@ -1,0 +1,43 @@
+🚀 QUICK SETUP GUIDE - Google Sheets Integration
+
+📊 STEP 1: Create Google Spreadsheet
+1. Go to sheets.google.com
+2. Create new spreadsheet
+3. Name it "Theia Sales Records"
+4. Copy the SPREADSHEET ID from URL
+   Example: https://docs.google.com/spreadsheets/d/1ABC123XYZ789/edit
+   Copy: 1ABC123XYZ789
+
+🔧 STEP 2: Setup Google Apps Script  
+1. Go to script.google.com
+2. Click "New Project"
+3. Delete default code
+4. Copy-paste code from 'google-apps-script.js' file
+5. Update line 10: Replace 'PASTE_YOUR_SPREADSHEET_ID_HERE' with your ID
+6. Save project (name it "Theia Sales API")
+
+🚀 STEP 3: Deploy Script
+1. Click "Deploy" → "New Deployment"
+2. Click gear icon, select "Web app"
+3. Set:
+   - Execute as: Me
+   - Who has access: Anyone
+4. Click "Deploy"
+5. Copy the WEB APP URL
+
+📱 STEP 4: Configure HTML App
+1. Open your jewelry-sales-tracker.html
+2. Add first sale record
+3. You'll get a popup asking for Google Sheets setup
+4. Paste your WEB APP URL
+5. Done!
+
+✅ NOW YOUR DATA SAVES TO:
+- Browser (locally) ✓
+- Google Sheets (cloud backup) ✓
+
+💡 BENEFITS:
+- Access from any device
+- Automatic backup
+- Easy data analysis
+- Share with team members

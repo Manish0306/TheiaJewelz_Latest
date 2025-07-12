@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator for Theia Jewelz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #6366F1 0%, #DB2777 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        canvas {
+            border: 2px solid white;
+            border-radius: 10px;
+            margin: 10px;
+            background: white;
+        }
+        button {
+            background: #DB2777;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background: #BE185D;
+        }
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .icon-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        .download-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Theia Jewelz Icon Generator</h1>
+        <p>Generate all required icons for your APK conversion</p>
+        
+        <div>
+            <button onclick="generateAllIcons()">🚀 Generate All Icons</button>
+            <button onclick="downloadAllIcons()">📱 Download Icon Package</button>
+        </div>
+        
+        <div class="icons-grid" id="iconsGrid">
+            <!-- Icons will be generated here -->
+        </div>
+        
+        <div class="download-section">
+            <h3>📋 APK Conversion Instructions</h3>
+            <p>After generating icons, you can convert your PWA to APK using these methods:</p>
+            <ol>
+                <li><strong>PWABuilder (Recommended)</strong> - pwabuilder.com</li>
+                <li><strong>Bubblewrap</strong> - Google's official tool</li>
+                <li><strong>Capacitor</strong> - For advanced features</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const icons = {};
+        
+        function createIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#6366F1');
+            gradient.addColorStop(1, '#DB2777');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Add border radius effect
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, size * 0.18);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // Add diamond icon
+            ctx.fillStyle = 'white';
+            ctx.font = `${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💎', size / 2, size / 2);
+            
+            // Add company name for larger icons
+            if (size >= 192) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = `bold ${size * 0.08}px Arial`;
+                ctx.fillText('THEIA', size / 2, size * 0.8);
+                ctx.font = `${size * 0.06}px Arial`;
+                ctx.fillText('JEWELZ', size / 2, size * 0.9);
+            }
+            
+            return canvas;
+        }
+        
+        function generateAllIcons() {
+            const grid = document.getElementById('iconsGrid');
+            grid.innerHTML = '';
+            
+            iconSizes.forEach(size => {
+                const canvas = createIcon(size);
+                const item = document.createElement('div');
+                item.className = 'icon-item';
+                
+                const downloadBtn = document.createElement('button');
+                downloadBtn.textContent = `${size}x${size}`;
+                downloadBtn.style.fontSize = '12px';
+                downloadBtn.style.padding = '5px 10px';
+                downloadBtn.onclick = () => downloadIcon(canvas, size);
+                
+                item.appendChild(canvas);
+                item.appendChild(downloadBtn);
+                grid.appendChild(item);
+                
+                icons[size] = canvas;
+            });
+        }
+        
+        function downloadIcon(canvas, size) {
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        function downloadAllIcons() {
+            if (Object.keys(icons).length === 0) {
+                alert('Please generate icons first!');
+                return;
+            }
+            
+            // Download all icons
+            iconSizes.forEach(size => {
+                if (icons[size]) {
+                    setTimeout(() => downloadIcon(icons[size], size), size * 10);
+                }
+            });
+            
+            alert('🎉 All icons will be downloaded! Please save them to the /icons/ folder of your project.');
+        }
+        
+        // Auto-generate icons on load
+        window.onload = () => {
+            generateAllIcons();
+        };
+    </script>
+</body>
+</html>

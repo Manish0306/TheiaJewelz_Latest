@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK Builder - Theia Jewelz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #6366F1 0%, #DB2777 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .method {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .method:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .method-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        
+        .method h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .method p {
+            margin-bottom: 20px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #10B981, #059669);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+        
+        .tools {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .tool {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.2);
+            border-radius: 10px;
+            border-left: 4px solid #10B981;
+        }
+        
+        .checklist {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+        
+        .checklist ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .checklist li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .checklist li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .methods {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 APK Builder</h1>
+            <p>Convert Theia Jewelz PWA to Android APK</p>
+        </div>
+        
+        <div class="methods">
+            <div class="method">
+                <div class="method-icon">🌐</div>
+                <h3>PWABuilder</h3>
+                <p>Fastest and easiest method. No coding required. Perfect for beginners.</p>
+                <button class="btn btn-primary" onclick="openPWABuilder()">Start PWABuilder</button>
+            </div>
+            
+            <div class="method">
+                <div class="method-icon">⚡</div>
+                <h3>Capacitor</h3>
+                <p>Advanced method with native features. Requires Node.js and Android Studio.</p>
+                <button class="btn" onclick="setupCapacitor()">Setup Capacitor</button>
+            </div>
+            
+            <div class="method">
+                <div class="method-icon">🛠️</div>
+                <h3>Bubblewrap</h3>
+                <p>Google's official tool. Command-line based. Great for automation.</p>
+                <button class="btn" onclick="setupBubblewrap()">Setup Bubblewrap</button>
+            </div>
+        </div>
+        
+        <div class="tools">
+            <div class="tool">
+                <h4>🎨 Generate Icons</h4>
+                <p>Create all required app icons</p>
+                <button class="btn" onclick="generateIcons()">Generate</button>
+            </div>
+            
+            <div class="tool">
+                <h4>📖 View Guide</h4>
+                <p>Complete setup instructions</p>
+                <button class="btn" onclick="viewGuide()">Open Guide</button>
+            </div>
+            
+            <div class="tool">
+                <h4>⚡ Quick Setup</h4>
+                <p>Fast track instructions</p>
+                <button class="btn" onclick="quickSetup()">Quick Start</button>
+            </div>
+            
+            <div class="tool">
+                <h4>🚀 Test PWA</h4>
+                <p>Test your app first</p>
+                <button class="btn" onclick="testApp()">Test App</button>
+            </div>
+        </div>
+        
+        <div class="status">
+            <h3>📋 Pre-flight Status</h3>
+            <div id="status-checks">
+                <p>Checking PWA configuration...</p>
+            </div>
+        </div>
+        
+        <div class="checklist">
+            <h3>✅ APK Conversion Checklist</h3>
+            <ul>
+                <li>PWA manifest.json configured</li>
+                <li>Service worker registered</li>
+                <li>App icons generated</li>
+                <li>Mobile responsive design</li>
+                <li>Offline functionality tested</li>
+                <li>HTTPS hosting ready (for PWABuilder)</li>
+                <li>All features working on mobile</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Check PWA status
+        function checkPWAStatus() {
+            const statusDiv = document.getElementById('status-checks');
+            let checks = [];
+            
+            // Check manifest
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            checks.push(manifestLink ? '✅ Manifest found' : '❌ Manifest missing');
+            
+            // Check service worker
+            checks.push(navigator.serviceWorker ? '✅ Service Worker supported' : '❌ Service Worker not supported');
+            
+            // Check icons
+            fetch('./icons/icon-192x192.png')
+                .then(() => checks.push('✅ Icons available'))
+                .catch(() => checks.push('❌ Icons missing'))
+                .finally(() => {
+                    statusDiv.innerHTML = checks.join('<br>');
+                });
+        }
+        
+        function openPWABuilder() {
+            alert('📝 PWABuilder Instructions:\n\n1. Host your PWA with HTTPS\n2. Go to pwabuilder.com\n3. Enter your PWA URL\n4. Download Android APK\n\nOpening PWABuilder now...');
+            window.open('https://www.pwabuilder.com/', '_blank');
+        }
+        
+        function setupCapacitor() {
+            alert('⚡ Capacitor Setup:\n\n1. Install Node.js\n2. Install Android Studio\n3. Run: npm run apk:install-capacitor\n4. Run: npm run apk:build-capacitor\n\nSee the complete guide for details.');
+        }
+        
+        function setupBubblewrap() {
+            alert('🛠️ Bubblewrap Setup:\n\n1. Install Node.js\n2. Run: npm run apk:install-bubblewrap\n3. Run: bubblewrap init\n4. Run: bubblewrap build\n\nSee the complete guide for details.');
+        }
+        
+        function generateIcons() {
+            window.open('./create-icons.html', '_blank');
+        }
+        
+        function viewGuide() {
+            window.open('./APK_CONVERSION_GUIDE.md', '_blank');
+        }
+        
+        function quickSetup() {
+            window.open('./QUICK_APK_SETUP.md', '_blank');
+        }
+        
+        function testApp() {
+            window.open('./jewelry_sales_final.html', '_blank');
+        }
+        
+        // Initialize
+        window.onload = function() {
+            checkPWAStatus();
+        };
+    </script>
+</body>
+</html>
