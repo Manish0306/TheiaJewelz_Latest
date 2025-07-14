@@ -3397,7 +3397,12 @@
                             <p style="margin: 0; font-size: 13px; color: var(--neutral-600);">
                                 <strong>Method:</strong> <span id="current-db-method">Firebase Firestore</span><br>
                                 <strong>Connection:</strong> <span id="current-db-status">Connected</span><br>
-                                <strong>Auto-save:</strong> <span id="current-auto-save">Enabled</span>
+                                <strong>Auto-save:</strong> <span id="current-auto-save">Enabled</span><br>
+                                <strong>Domain:</strong> <span id="current-domain">Loading...</span>
+                            </p>
+                            <button class="btn btn-primary" onclick="runConnectionTest()" style="margin-top: 10px; padding: 8px 16px; font-size: 13px;">
+                                <i class="fas fa-vial"></i> Test Firebase Connection
+                            </button>
                             </p>
                         </div>
 
@@ -4434,6 +4439,7 @@
         // ======== DATABASE INITIALIZATION ========
         function initializeDatabase() {
             console.log('🔄 Initializing database...', dbConfig.method);
+            console.log('🌐 Running on domain:', window.location.hostname);
             
             switch(dbConfig.method) {
                 case 'firebase':
@@ -4445,6 +4451,40 @@
                 default:
                     console.warn('Unknown database method, falling back to local storage');
                     return initializeLocalStorage();
+            }
+        }
+
+        // Test Firebase connection
+        async function testFirebaseConnection() {
+            if (!firestore) {
+                console.error('❌ Firebase not initialized');
+                return false;
+            }
+            
+            try {
+                console.log('🔥 Testing Firebase connection...');
+                const testDoc = await firestore.collection('connection-test').add({
+                    test: true,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    domain: window.location.hostname,
+                    origin: window.location.origin
+                });
+                
+                console.log('✅ Firebase connection test successful:', testDoc.id);
+                
+                // Clean up test document
+                await testDoc.delete();
+                return true;
+            } catch (error) {
+                console.error('❌ Firebase connection test failed:', error);
+                console.error('❌ Error code:', error.code);
+                
+                if (error.code === 'permission-denied') {
+                    console.error('❌ Permission denied - check Firebase security rules');
+                    alert('❌ Permission denied - Firebase security rules may be blocking access from: ' + window.location.hostname);
+                }
+                
+                return false;
             }
         }
 
@@ -4460,6 +4500,8 @@
                 // Initialize Firebase (check if already exists)
                 if (!firebaseApp) {
                     console.log('🔥 Initializing Firebase with config:', dbConfig.firebase);
+                    console.log('🌐 Current domain:', window.location.hostname);
+                    console.log('🌐 Current origin:', window.location.origin);
                     
                     // Check if Firebase app already exists
                     if (firebase.apps.length === 0) {
@@ -4473,6 +4515,13 @@
                     firestore = firebase.firestore();
                     auth = firebase.auth();
                     console.log('🔥 Firestore instance:', firestore);
+                    
+                    // Enable network for GitHub Pages
+                    firestore.enableNetwork().then(() => {
+                        console.log('🔥 Firestore network enabled');
+                    }).catch(err => {
+                        console.error('❌ Firestore network error:', err);
+                    });
                     
                     // Show connection status
                     showDatabaseStatus('Firebase connected', 'success');
@@ -4565,6 +4614,7 @@
         // Save to Firebase
         async function saveToFirebase(saleData) {
             console.log('🔥 Attempting to save to Firebase:', saleData);
+            console.log('🌐 Current domain:', window.location.hostname);
             
             if (!firestore) {
                 const error = 'Firebase not initialized';
@@ -4575,11 +4625,19 @@
             
             try {
                 console.log('🔥 Firestore instance exists, saving to collection...');
-                const docRef = await firestore.collection('sales').add({
+                
+                // Add domain information for debugging
+                const dataToSave = {
                     ...saleData,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    createdAt: new Date().toISOString()
-                });
+                    createdAt: new Date().toISOString(),
+                    domain: window.location.hostname,
+                    origin: window.location.origin
+                };
+                
+                console.log('🔥 Data being saved:', dataToSave);
+                
+                const docRef = await firestore.collection('sales').add(dataToSave);
                 
                 console.log('✅ Successfully saved to Firebase with ID:', docRef.id);
                 return {
@@ -4589,6 +4647,17 @@
                 };
             } catch (error) {
                 console.error('❌ Firebase save error:', error);
+                console.error('❌ Error code:', error.code);
+                console.error('❌ Error details:', error);
+                
+                // Handle specific Firebase errors
+                if (error.code === 'permission-denied') {
+                    const errorMsg = 'Permission denied. Please check Firebase security rules for domain: ' + window.location.hostname;
+                    console.error('❌ Permission Error:', errorMsg);
+                    alert('❌ Permission Error: ' + errorMsg);
+                    return { success: false, error: errorMsg };
+                }
+                
                 alert('❌ Firebase Save Error: ' + error.message);
                 return { success: false, error: error.message };
             }
@@ -5228,6 +5297,9 @@
                         document.getElementById('currency-symbol').value = settings.currencySymbol;
                     }
                     
+                    // Update domain display
+                    document.getElementById('current-domain').textContent = window.location.hostname;
+                    
                     // Load database settings
                     if (settings.database) {
                         dbConfig.method = settings.database.method || 'firebase';
@@ -5803,6 +5875,24 @@
                 showError('❌ Connection test error: ' + error.message);
                 document.getElementById('current-db-status').textContent = 'Error';
                 alert('❌ ERROR!\n\nConnection test error:\n' + error.message);
+            }
+        }
+
+        // Run Firebase connection test
+        async function runConnectionTest() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+            
+            try {
+                if (dbConfig.method === 'firebase') {
+                    await testFirebaseConnection();
+                } else {
+                    await testDatabaseConnection();
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-vial"></i> Test Firebase Connection';
             }
         }
 
