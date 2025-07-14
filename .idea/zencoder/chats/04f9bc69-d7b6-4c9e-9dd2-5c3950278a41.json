@@ -1,0 +1,315 @@
+{
+    "checksum": "f409433c9187d2c41ade2b54ca9dd79f46219fd8c0619576781b99752874d8f9",
+    "data": {
+    "id": "04f9bc69-d7b6-4c9e-9dd2-5c3950278a41",
+    "createdAt": 1750689868662,
+    "updatedAt": 1750689895240,
+    "title": "VCF File Import Updates",
+    "messages": [
+        {
+            "id": "220cff65-6f8a-497b-853b-123da8f5ec54",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "update the code so that it read .vcf also on import under customer tab"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "google-apps-script.js",
+                    "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    console.log('doPost called with data:', e.postData.contents);\r\n    const data = JSON.parse(e.postData.contents);\r\n    console.log('Parsed data:', data);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n    console.log('Save result:', result);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    console.log('Opening spreadsheet with ID:', SPREADSHEET_ID);\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    console.log('Sheet found:', !!sheet);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      console.log('Creating new sheet:', SHEET_NAME);\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      console.log('Setting up headers');\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    console.log('Adding row data:', rowData);\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    console.log('New row added at position:', lastRow);\r\n    formatRow(sheet, lastRow);\r\n\r\n    const result = {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n    console.log('Returning success result:', result);\r\n    return result;\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n\r\n/**\r\n * Verification function - check sheet status and data\r\n */\r\nfunction verifySheetStatus() {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return {\r\n        success: false,\r\n        message: 'Sheet not found',\r\n        spreadsheetUrl: spreadsheet.getUrl()\r\n      };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    const lastColumn = sheet.getLastColumn();\r\n    \r\n    let recentData = null;\r\n    if (lastRow > 1) {\r\n      // Get the last row of data (excluding header)\r\n      recentData = sheet.getRange(lastRow, 1, 1, lastColumn).getValues()[0];\r\n    }\r\n    \r\n    return {\r\n      success: true,\r\n      message: 'Sheet verification complete',\r\n      spreadsheetUrl: spreadsheet.getUrl(),\r\n      totalRows: lastRow,\r\n      totalColumns: lastColumn,\r\n      hasData: lastRow > 1,\r\n      recentEntry: recentData\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error verifying sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Get recent entries from the sheet\r\n */\r\nfunction getRecentEntries(count = 5) {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return { success: false, message: 'Sheet not found' };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    if (lastRow <= 1) {\r\n      return { success: true, message: 'No data entries found', entries: [] };\r\n    }\r\n    \r\n    const startRow = Math.max(2, lastRow - count + 1);\r\n    const numRows = lastRow - startRow + 1;\r\n    \r\n    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];\r\n    const data = sheet.getRange(startRow, 1, numRows, sheet.getLastColumn()).getValues();\r\n    \r\n    const entries = data.map(row => {\r\n      const entry = {};\r\n      headers.forEach((header, index) => {\r\n        entry[header] = row[index];\r\n      });\r\n      return entry;\r\n    });\r\n    \r\n    return {\r\n      success: true,\r\n      message: `Retrieved ${entries.length} recent entries`,\r\n      entries: entries,\r\n      totalRows: lastRow - 1 // Excluding header\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error getting recent entries:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n"
+                },
+                "codebaseEnabled": true,
+                "ragFiles": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_final.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_final.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_tracker.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_tracker.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_simple.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_simple.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_fixed.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_fixed.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_working.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_working.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_working.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_working.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_simple.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_simple.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_fixed.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_fixed.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_tracker.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_tracker.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_final.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_final.html",
+                        "sources": []
+                    },
+                    {
+                        "path": ".zencoder\\.gitignore",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.zencoder\\.gitignore",
+                        "sources": []
+                    },
+                    {
+                        "path": ".editorconfig",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.editorconfig",
+                        "sources": []
+                    },
+                    {
+                        "path": ".gitattributes",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.gitattributes",
+                        "sources": []
+                    },
+                    {
+                        "path": "SETUP_GOOGLE_SHEETS.txt",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\SETUP_GOOGLE_SHEETS.txt",
+                        "sources": []
+                    },
+                    {
+                        "path": "README-APP.md",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\README-APP.md",
+                        "sources": []
+                    },
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_final.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_final.html",
+                        "sources": [
+                            "opened_tab"
+                        ]
+                    }
+                ],
+                "rerankedFiles": [],
+                "usedFilePaths": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ],
+                        "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    console.log('doPost called with data:', e.postData.contents);\r\n    const data = JSON.parse(e.postData.contents);\r\n    console.log('Parsed data:', data);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n    console.log('Save result:', result);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    console.log('Opening spreadsheet with ID:', SPREADSHEET_ID);\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    console.log('Sheet found:', !!sheet);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      console.log('Creating new sheet:', SHEET_NAME);\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      console.log('Setting up headers');\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    console.log('Adding row data:', rowData);\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    console.log('New row added at position:', lastRow);\r\n    formatRow(sheet, lastRow);\r\n\r\n    const result = {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n    console.log('Returning success result:', result);\r\n    return result;\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n\r\n/**\r\n * Verification function - check sheet status and data\r\n */\r\nfunction verifySheetStatus() {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return {\r\n        success: false,\r\n        message: 'Sheet not found',\r\n        spreadsheetUrl: spreadsheet.getUrl()\r\n      };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    const lastColumn = sheet.getLastColumn();\r\n    \r\n    let recentData = null;\r\n    if (lastRow > 1) {\r\n      // Get the last row of data (excluding header)\r\n      recentData = sheet.getRange(lastRow, 1, 1, lastColumn).getValues()[0];\r\n    }\r\n    \r\n    return {\r\n      success: true,\r\n      message: 'Sheet verification complete',\r\n      spreadsheetUrl: spreadsheet.getUrl(),\r\n      totalRows: lastRow,\r\n      totalColumns: lastColumn,\r\n      hasData: lastRow > 1,\r\n      recentEntry: recentData\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error verifying sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Get recent entries from the sheet\r\n */\r\nfunction getRecentEntries(count = 5) {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return { success: false, message: 'Sheet not found' };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    if (lastRow <= 1) {\r\n      return { success: true, message: 'No data entries found', entries: [] };\r\n    }\r\n    \r\n    const startRow = Math.max(2, lastRow - count + 1);\r\n    const numRows = lastRow - startRow + 1;\r\n    \r\n    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];\r\n    const data = sheet.getRange(startRow, 1, numRows, sheet.getLastColumn()).getValues();\r\n    \r\n    const entries = data.map(row => {\r\n      const entry = {};\r\n      headers.forEach((header, index) => {\r\n        entry[header] = row[index];\r\n      });\r\n      return entry;\r\n    });\r\n    \r\n    return {\r\n      success: true,\r\n      message: `Retrieved ${entries.length} recent entries`,\r\n      entries: entries,\r\n      totalRows: lastRow - 1 // Excluding header\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error getting recent entries:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n"
+                    }
+                ]
+            },
+            "createdAt": 1750689868678,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "update the code so that it read .vcf also on import under customer tab"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "f1257b13-f1e6-4c61-81d4-434eb41294c0",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "To update the code so that it can read `.vcf` files on import under the customer tab, you will need to add functionality to parse `.vcf` files and extract relevant contact information. Here's how you can modify the existing script to achieve this:\n\n1. **Add a Function to Parse `.vcf` Files:**\n\n   You need a function that can read the contents of a `.vcf` file and extract contact information such as name, phone number, and email. Here's a simple parser for `.vcf` files:\n\n   ```javascript\n   /**\n    * Parse VCF data to extract contact information\n    * @param {string} vcfData - The raw VCF data as a string\n    * @returns {Array} - An array of contact objects\n    */\n   function parseVcf(vcfData) {\n     const contacts = [];\n     const vcfEntries = vcfData.split('END:VCARD');\n     vcfEntries.forEach(entry => {\n       const contact = {};\n       const lines = entry.split('\\n');\n       lines.forEach(line => {\n         if (line.startsWith('FN:')) {\n           contact.name = line.substring(3).trim();\n         } else if (line.startsWith('TEL:')) {\n           contact.phone = line.substring(4).trim();\n         } else if (line.startsWith('EMAIL:')) {\n           contact.email = line.substring(6).trim();\n         }\n       });\n       if (contact.name) {\n         contacts.push(contact);\n       }\n     });\n     return contacts;\n   }\n   ```\n\n2. **Modify the `doPost` Function to Handle `.vcf` Files:**\n\n   Update the `doPost` function to check if the incoming data is a `.vcf` file and parse it accordingly.\n\n   ```javascript\n   function doPost(e) {\n     try {\n       console.log('doPost called with data:', e.postData.contents);\n       let data;\n       \n       if (e.postData.type === 'text/vcard') {\n         // Parse VCF data\n         data = parseVcf(e.postData.contents);\n         console.log('Parsed VCF data:', data);\n       } else {\n         // Assume JSON data\n         data = JSON.parse(e.postData.contents);\n         console.log('Parsed JSON data:', data);\n       }\n\n       // Save to Google Sheets\n       const result = saveToSheet(data);\n       console.log('Save result:', result);\n\n       return ContentService\n         .createTextOutput(JSON.stringify(result))\n         .setMimeType(ContentService.MimeType.JSON);\n\n     } catch (error) {\n       console.error('Error in doPost:', error);\n       return ContentService\n         .createTextOutput(JSON.stringify({\n           success: false,\n           error: error.toString()\n         }))\n         .setMimeType(ContentService.MimeType.JSON);\n     }\n   }\n   ```\n\n3. **Update the `saveToSheet` Function to Handle Multiple Contacts:**\n\n   If the `.vcf` file contains multiple contacts, you need to iterate over them and save each one to the sheet.\n\n   ```javascript\n   function saveToSheet(data) {\n     try {\n       console.log('Opening spreadsheet with ID:', SPREADSHEET_ID);\n       const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\n       let sheet = spreadsheet.getSheetByName(SHEET_NAME);\n       console.log('Sheet found:', !!sheet);\n\n       if (!sheet) {\n         console.log('Creating new sheet:', SHEET_NAME);\n         sheet = spreadsheet.insertSheet(SHEET_NAME);\n         setupHeaders(sheet);\n       }\n\n       if (sheet.getLastRow() === 0) {\n         console.log('Setting up headers');\n         setupHeaders(sheet);\n       }\n\n       const timestamp = new Date();\n       data.forEach(contact => {\n         const rowData = [\n           timestamp,                    // A: Timestamp\n           contact.name || '',           // B: Item Name\n           '',                           // C: Category\n           '',                           // D: Price\n           '',                           // E: Sale Date\n           contact.name || '',           // F: Customer\n           contact.phone || '',          // G: Phone\n           contact.email || '',          // H: Email\n           timestamp.getTime()           // I: Record ID\n         ];\n\n         console.log('Adding row data:', rowData);\n         sheet.appendRow(rowData);\n\n         const lastRow = sheet.getLastRow();\n         console.log('New row added at position:', lastRow);\n         formatRow(sheet, lastRow);\n       });\n\n       const result = {\n         success: true,\n         message: 'Contacts recorded successfully in Google Sheets',\n         spreadsheetUrl: spreadsheet.getUrl()\n       };\n       console.log('Returning success result:', result);\n       return result;\n\n     } catch (error) {\n       console.error('Error saving to sheet:', error);\n       return {\n         success: false,\n         error: error.toString()\n       };\n     }\n   }\n   ```\n\n4. **Update the Headers Setup:**\n\n   Ensure the headers in the sheet include an \"Email\" column if you want to store email addresses from the `.vcf` file.\n\n   ```javascript\n   function setupHeaders(sheet) {\n     const headers = [\n       'Timestamp',\n       'Item Name',\n       'Category',\n       'Price (₹)',\n       'Sale Date',\n       'Customer',\n       'Phone',\n       'Email',\n       'Record ID'\n     ];\n\n     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\n\n     const headerRange = sheet.getRange(1, 1, 1, headers.length);\n     headerRange.setBackground('#4285f4');\n     headerRange.setFontColor('white');\n     headerRange.setFontWeight('bold');\n     headerRange.setBorder(true, true, true, true, true, true);\n\n     sheet.setColumnWidth(1, 150); // Timestamp\n     sheet.setColumnWidth(2, 200); // Item Name\n     sheet.setColumnWidth(3, 120); // Category\n     sheet.setColumnWidth(4, 100); // Price\n     sheet.setColumnWidth(5, 100); // Sale Date\n     sheet.setColumnWidth(6, 150); // Customer\n     sheet.setColumnWidth(7, 130); // Phone\n     sheet.setColumnWidth(8, 200); // Email\n     sheet.setColumnWidth(9, 100); // Record ID\n   }\n   ```\n\nThese changes will allow your script to handle `.vcf` files and import contact information into the Google Sheets under the customer tab. Make sure to test the updated script thoroughly to ensure it works as expected."
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "google-apps-script.js",
+                    "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    console.log('doPost called with data:', e.postData.contents);\r\n    const data = JSON.parse(e.postData.contents);\r\n    console.log('Parsed data:', data);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n    console.log('Save result:', result);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    console.log('Opening spreadsheet with ID:', SPREADSHEET_ID);\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    console.log('Sheet found:', !!sheet);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      console.log('Creating new sheet:', SHEET_NAME);\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      console.log('Setting up headers');\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    console.log('Adding row data:', rowData);\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    console.log('New row added at position:', lastRow);\r\n    formatRow(sheet, lastRow);\r\n\r\n    const result = {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n    console.log('Returning success result:', result);\r\n    return result;\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n\r\n/**\r\n * Verification function - check sheet status and data\r\n */\r\nfunction verifySheetStatus() {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return {\r\n        success: false,\r\n        message: 'Sheet not found',\r\n        spreadsheetUrl: spreadsheet.getUrl()\r\n      };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    const lastColumn = sheet.getLastColumn();\r\n    \r\n    let recentData = null;\r\n    if (lastRow > 1) {\r\n      // Get the last row of data (excluding header)\r\n      recentData = sheet.getRange(lastRow, 1, 1, lastColumn).getValues()[0];\r\n    }\r\n    \r\n    return {\r\n      success: true,\r\n      message: 'Sheet verification complete',\r\n      spreadsheetUrl: spreadsheet.getUrl(),\r\n      totalRows: lastRow,\r\n      totalColumns: lastColumn,\r\n      hasData: lastRow > 1,\r\n      recentEntry: recentData\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error verifying sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Get recent entries from the sheet\r\n */\r\nfunction getRecentEntries(count = 5) {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return { success: false, message: 'Sheet not found' };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    if (lastRow <= 1) {\r\n      return { success: true, message: 'No data entries found', entries: [] };\r\n    }\r\n    \r\n    const startRow = Math.max(2, lastRow - count + 1);\r\n    const numRows = lastRow - startRow + 1;\r\n    \r\n    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];\r\n    const data = sheet.getRange(startRow, 1, numRows, sheet.getLastColumn()).getValues();\r\n    \r\n    const entries = data.map(row => {\r\n      const entry = {};\r\n      headers.forEach((header, index) => {\r\n        entry[header] = row[index];\r\n      });\r\n      return entry;\r\n    });\r\n    \r\n    return {\r\n      success: true,\r\n      message: `Retrieved ${entries.length} recent entries`,\r\n      entries: entries,\r\n      totalRows: lastRow - 1 // Excluding header\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error getting recent entries:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n"
+                },
+                "codebaseEnabled": true,
+                "ragFiles": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_final.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_final.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_tracker.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_tracker.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_simple.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_simple.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_fixed.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_fixed.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_working.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_working.html",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_working.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_working.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_simple.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_simple.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_fixed.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_fixed.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_tracker.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_tracker.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry_sales_final.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_final.html",
+                        "sources": []
+                    },
+                    {
+                        "path": ".zencoder\\.gitignore",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.zencoder\\.gitignore",
+                        "sources": []
+                    },
+                    {
+                        "path": ".editorconfig",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.editorconfig",
+                        "sources": []
+                    },
+                    {
+                        "path": ".gitattributes",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.gitattributes",
+                        "sources": []
+                    },
+                    {
+                        "path": "SETUP_GOOGLE_SHEETS.txt",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\SETUP_GOOGLE_SHEETS.txt",
+                        "sources": []
+                    },
+                    {
+                        "path": "README-APP.md",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\README-APP.md",
+                        "sources": []
+                    },
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ]
+                    },
+                    {
+                        "path": "jewelry_sales_final.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry_sales_final.html",
+                        "sources": [
+                            "opened_tab"
+                        ]
+                    }
+                ],
+                "rerankedFiles": [],
+                "usedFilePaths": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ],
+                        "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    console.log('doPost called with data:', e.postData.contents);\r\n    const data = JSON.parse(e.postData.contents);\r\n    console.log('Parsed data:', data);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n    console.log('Save result:', result);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    console.log('Opening spreadsheet with ID:', SPREADSHEET_ID);\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    console.log('Sheet found:', !!sheet);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      console.log('Creating new sheet:', SHEET_NAME);\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      console.log('Setting up headers');\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    console.log('Adding row data:', rowData);\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    console.log('New row added at position:', lastRow);\r\n    formatRow(sheet, lastRow);\r\n\r\n    const result = {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n    console.log('Returning success result:', result);\r\n    return result;\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n\r\n/**\r\n * Verification function - check sheet status and data\r\n */\r\nfunction verifySheetStatus() {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return {\r\n        success: false,\r\n        message: 'Sheet not found',\r\n        spreadsheetUrl: spreadsheet.getUrl()\r\n      };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    const lastColumn = sheet.getLastColumn();\r\n    \r\n    let recentData = null;\r\n    if (lastRow > 1) {\r\n      // Get the last row of data (excluding header)\r\n      recentData = sheet.getRange(lastRow, 1, 1, lastColumn).getValues()[0];\r\n    }\r\n    \r\n    return {\r\n      success: true,\r\n      message: 'Sheet verification complete',\r\n      spreadsheetUrl: spreadsheet.getUrl(),\r\n      totalRows: lastRow,\r\n      totalColumns: lastColumn,\r\n      hasData: lastRow > 1,\r\n      recentEntry: recentData\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error verifying sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Get recent entries from the sheet\r\n */\r\nfunction getRecentEntries(count = 5) {\r\n  try {\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    const sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n    \r\n    if (!sheet) {\r\n      return { success: false, message: 'Sheet not found' };\r\n    }\r\n    \r\n    const lastRow = sheet.getLastRow();\r\n    if (lastRow <= 1) {\r\n      return { success: true, message: 'No data entries found', entries: [] };\r\n    }\r\n    \r\n    const startRow = Math.max(2, lastRow - count + 1);\r\n    const numRows = lastRow - startRow + 1;\r\n    \r\n    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];\r\n    const data = sheet.getRange(startRow, 1, numRows, sheet.getLastColumn()).getValues();\r\n    \r\n    const entries = data.map(row => {\r\n      const entry = {};\r\n      headers.forEach((header, index) => {\r\n        entry[header] = row[index];\r\n      });\r\n      return entry;\r\n    });\r\n    \r\n    return {\r\n      success: true,\r\n      message: `Retrieved ${entries.length} recent entries`,\r\n      entries: entries,\r\n      totalRows: lastRow - 1 // Excluding header\r\n    };\r\n    \r\n  } catch (error) {\r\n    console.error('Error getting recent entries:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n"
+                    }
+                ]
+            },
+            "createdAt": 1750689895240,
+            "isInternal": false
+        }
+    ],
+    "isAgent": false,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "autoApply": false
+}
+}

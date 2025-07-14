@@ -1,0 +1,231 @@
+{
+    "checksum": "41403171fe18b6f956d8694dcd923a02418f3acf22a7076c80fe9f50458ab090",
+    "data": {
+    "id": "a88f93b5-c0b9-472d-85f0-5a8d96bc60d9",
+    "createdAt": 1750594006098,
+    "updatedAt": 1750594018074,
+    "title": "Excel Sheet Update Verification",
+    "messages": [
+        {
+            "id": "1e29aa72-49ff-4337-b3d7-5db185be1be3",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "how to check if data is getting updated on excel sheet on save"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "google-apps-script.js",
+                    "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    const data = JSON.parse(e.postData.contents);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    formatRow(sheet, lastRow);\r\n\r\n    return {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n"
+                },
+                "codebaseEnabled": true,
+                "ragFiles": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry-sales-tracker.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry-sales-tracker.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "index.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\index.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "site.webmanifest",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\site.webmanifest",
+                        "sources": []
+                    },
+                    {
+                        "path": "js\\app.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\js\\app.js",
+                        "sources": []
+                    },
+                    {
+                        "path": "SETUP_GOOGLE_SHEETS.txt",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\SETUP_GOOGLE_SHEETS.txt",
+                        "sources": []
+                    },
+                    {
+                        "path": ".zencoder\\.gitignore",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.zencoder\\.gitignore",
+                        "sources": []
+                    },
+                    {
+                        "path": "LICENSE.txt",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\LICENSE.txt",
+                        "sources": []
+                    },
+                    {
+                        "path": ".editorconfig",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.editorconfig",
+                        "sources": []
+                    },
+                    {
+                        "path": "css\\style.css",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\css\\style.css",
+                        "sources": []
+                    },
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ]
+                    }
+                ],
+                "rerankedFiles": [],
+                "usedFilePaths": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ],
+                        "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    const data = JSON.parse(e.postData.contents);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    formatRow(sheet, lastRow);\r\n\r\n    return {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n"
+                    }
+                ]
+            },
+            "createdAt": 1750594006118,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "how to check if data is getting updated on excel sheet on save"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "29b965b1-bd3b-44c9-85e3-29b0638d4c5e",
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "To check if data is getting updated on a Google Sheets document when saved, you can use Google Apps Script to monitor changes. In your current setup, you are already using a script to handle POST requests and save data to a Google Sheet. However, if you want to ensure that data is updated correctly, you can implement a few additional checks or logging mechanisms.\n\nHere's how you can enhance your script to verify data updates:\n\n1. **Logging Updates:**\n   You can log each update to the Google Sheets to the console or a separate log sheet. This will help you track when and what data is being updated.\n\n2. **Return Detailed Response:**\n   Ensure that your `saveToSheet` function returns detailed information about the update, such as the row number and the data that was added.\n\n3. **Use Triggers:**\n   Google Sheets allows you to set up triggers that can run a function whenever a change is made to the sheet. This can be useful for logging or performing additional checks.\n\nHere's an example of how you might implement logging within your existing script:\n\n```javascript\nfunction saveToSheet(data) {\n  try {\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\n\n    if (!sheet) {\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\n      setupHeaders(sheet);\n    }\n\n    if (sheet.getLastRow() === 0) {\n      setupHeaders(sheet);\n    }\n\n    const timestamp = new Date();\n    const rowData = [\n      timestamp,\n      data.itemName,\n      data.category,\n      parseFloat(data.price),\n      new Date(data.date),\n      data.customer,\n      data.phone || '',\n      data.id || timestamp.getTime()\n    ];\n\n    sheet.appendRow(rowData);\n    const lastRow = sheet.getLastRow();\n    formatRow(sheet, lastRow);\n\n    // Log the update\n    console.log(`Data updated at row ${lastRow}:`, rowData);\n\n    return {\n      success: true,\n      message: 'Sale recorded successfully in Google Sheets',\n      row: lastRow,\n      spreadsheetUrl: spreadsheet.getUrl()\n    };\n\n  } catch (error) {\n    console.error('Error saving to sheet:', error);\n    return {\n      success: false,\n      error: error.toString()\n    };\n  }\n}\n```\n\n4. **Set Up a Change Trigger:**\n   You can set up an \"onEdit\" trigger to monitor changes. This can be done through the Google Apps Script editor under \"Triggers.\"\n\nBy implementing these strategies, you can ensure that data updates are tracked and verified effectively. If you need further assistance with setting up triggers or logging, feel free to ask!"
+                }
+            ],
+            "context": {
+                "currentFile": {
+                    "path": "google-apps-script.js",
+                    "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                    "sources": [
+                        "opened_tab"
+                    ],
+                    "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    const data = JSON.parse(e.postData.contents);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    formatRow(sheet, lastRow);\r\n\r\n    return {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n"
+                },
+                "codebaseEnabled": true,
+                "ragFiles": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "keyword_search"
+                        ]
+                    },
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": []
+                    },
+                    {
+                        "path": "jewelry-sales-tracker.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\jewelry-sales-tracker.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "index.html",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\index.html",
+                        "sources": []
+                    },
+                    {
+                        "path": "site.webmanifest",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\site.webmanifest",
+                        "sources": []
+                    },
+                    {
+                        "path": "js\\app.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\js\\app.js",
+                        "sources": []
+                    },
+                    {
+                        "path": "SETUP_GOOGLE_SHEETS.txt",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\SETUP_GOOGLE_SHEETS.txt",
+                        "sources": []
+                    },
+                    {
+                        "path": ".zencoder\\.gitignore",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.zencoder\\.gitignore",
+                        "sources": []
+                    },
+                    {
+                        "path": "LICENSE.txt",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\LICENSE.txt",
+                        "sources": []
+                    },
+                    {
+                        "path": ".editorconfig",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\.editorconfig",
+                        "sources": []
+                    },
+                    {
+                        "path": "css\\style.css",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\css\\style.css",
+                        "sources": []
+                    },
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ]
+                    }
+                ],
+                "rerankedFiles": [],
+                "usedFilePaths": [
+                    {
+                        "path": "google-apps-script.js",
+                        "fsPath": "C:\\Users\\Deeksha\\IdeaProjects\\TheiaSales\\google-apps-script.js",
+                        "sources": [
+                            "opened_tab"
+                        ],
+                        "content": "/**\r\n * Theia Sales - Google Apps Script for Google Sheets Integration\r\n *\r\n * Setup Instructions:\r\n * 1. Go to https://script.google.com\r\n * 2. Create a new project\r\n * 3. Replace the default code with this script\r\n * 4. Update SPREADSHEET_ID below with your Google Sheets ID\r\n * 5. Save and deploy as web app\r\n * 6. Copy the web app URL to use in your HTML file\r\n */\r\n\r\n// CONFIGURATION - UPDATE THIS WITH YOUR GOOGLE SHEETS ID\r\nconst SPREADSHEET_ID = '1pbkOaE3RvY3WmiEz5X1PeLRwahaF-_JNGdnOcZ74T8U';\r\nconst SHEET_NAME = 'Theia Sales';\r\n\r\n/**\r\n * Handle POST requests from the jewelry tracker\r\n */\r\nfunction doPost(e) {\r\n  try {\r\n    const data = JSON.parse(e.postData.contents);\r\n\r\n    // Save to Google Sheets\r\n    const result = saveToSheet(data);\r\n\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify(result))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n\r\n  } catch (error) {\r\n    console.error('Error in doPost:', error);\r\n    return ContentService\r\n      .createTextOutput(JSON.stringify({\r\n        success: false,\r\n        error: error.toString()\r\n      }))\r\n      .setMimeType(ContentService.MimeType.JSON);\r\n  }\r\n}\r\n\r\n/**\r\n * Handle GET requests - for testing\r\n */\r\nfunction doGet(e) {\r\n  return ContentService\r\n    .createTextOutput('Theia Sales Google Apps Script is running!')\r\n    .setMimeType(ContentService.MimeType.TEXT);\r\n}\r\n\r\n/**\r\n * Save jewelry sale data to Google Sheets\r\n */\r\nfunction saveToSheet(data) {\r\n  try {\r\n    // Open the spreadsheet\r\n    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);\r\n    let sheet = spreadsheet.getSheetByName(SHEET_NAME);\r\n\r\n    // Create sheet if it doesn't exist\r\n    if (!sheet) {\r\n      sheet = spreadsheet.insertSheet(SHEET_NAME);\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Check if headers exist (first row should have data)\r\n    if (sheet.getLastRow() === 0) {\r\n      setupHeaders(sheet);\r\n    }\r\n\r\n    // Prepare the data row\r\n    const timestamp = new Date();\r\n    const rowData = [\r\n      timestamp,                    // A: Timestamp\r\n      data.itemName,               // B: Item Name\r\n      data.category,               // C: Category\r\n      parseFloat(data.price),      // D: Price\r\n      new Date(data.date),         // E: Sale Date\r\n      data.customer,               // F: Customer\r\n      data.phone || '',            // G: Phone\r\n      data.id || timestamp.getTime() // H: Record ID\r\n    ];\r\n\r\n    // Add the row to the sheet\r\n    sheet.appendRow(rowData);\r\n\r\n    // Format the new row\r\n    const lastRow = sheet.getLastRow();\r\n    formatRow(sheet, lastRow);\r\n\r\n    return {\r\n      success: true,\r\n      message: 'Sale recorded successfully in Google Sheets',\r\n      row: lastRow,\r\n      spreadsheetUrl: spreadsheet.getUrl()\r\n    };\r\n\r\n  } catch (error) {\r\n    console.error('Error saving to sheet:', error);\r\n    return {\r\n      success: false,\r\n      error: error.toString()\r\n    };\r\n  }\r\n}\r\n\r\n/**\r\n * Set up the header row\r\n */\r\nfunction setupHeaders(sheet) {\r\n  const headers = [\r\n    'Timestamp',\r\n    'Item Name',\r\n    'Category',\r\n    'Price (₹)',\r\n    'Sale Date',\r\n    'Customer',\r\n    'Phone',\r\n    'Record ID'\r\n  ];\r\n\r\n  // Add headers\r\n  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);\r\n\r\n  // Format header row\r\n  const headerRange = sheet.getRange(1, 1, 1, headers.length);\r\n  headerRange.setBackground('#4285f4');\r\n  headerRange.setFontColor('white');\r\n  headerRange.setFontWeight('bold');\r\n  headerRange.setBorder(true, true, true, true, true, true);\r\n\r\n  // Set column widths\r\n  sheet.setColumnWidth(1, 150); // Timestamp\r\n  sheet.setColumnWidth(2, 200); // Item Name\r\n  sheet.setColumnWidth(3, 120); // Category\r\n  sheet.setColumnWidth(4, 100); // Price\r\n  sheet.setColumnWidth(5, 100); // Sale Date\r\n  sheet.setColumnWidth(6, 150); // Customer\r\n  sheet.setColumnWidth(7, 130); // Phone\r\n  sheet.setColumnWidth(8, 100); // Record ID\r\n}\r\n\r\n/**\r\n * Format a data row\r\n */\r\nfunction formatRow(sheet, rowNumber) {\r\n  // Format price column (column D)\r\n  const priceCell = sheet.getRange(rowNumber, 4);\r\n  priceCell.setNumberFormat('₹#,##0.00');\r\n\r\n  // Format date column (column E)\r\n  const dateCell = sheet.getRange(rowNumber, 5);\r\n  dateCell.setNumberFormat('dd/mm/yyyy');\r\n\r\n  // Add borders to the entire row\r\n  const rowRange = sheet.getRange(rowNumber, 1, 1, 8);\r\n  rowRange.setBorder(true, true, true, true, false, true);\r\n\r\n  // Alternate row coloring\r\n  if (rowNumber % 2 === 0) {\r\n    rowRange.setBackground('#f8f9fa');\r\n  }\r\n}\r\n\r\n/**\r\n * Test function - run this manually to test the setup\r\n */\r\nfunction testSetup() {\r\n  const testData = {\r\n    itemName: 'Test Gold Ring',\r\n    category: 'rings',\r\n    price: 999.99,\r\n    date: '2024-01-15',\r\n    customer: 'Test Customer',\r\n    phone: '+91 98765 43210',\r\n    id: Date.now()\r\n  };\r\n\r\n  const result = saveToSheet(testData);\r\n  console.log('Test result:', result);\r\n  return result;\r\n}\r\n"
+                    }
+                ]
+            },
+            "createdAt": 1750594018074,
+            "isInternal": false
+        }
+    ],
+    "isAgent": false,
+    "isNameGenerated": true,
+    "isCustomAgent": false,
+    "isUnitTestsAgent": false,
+    "isE2EAgent": false,
+    "autoApply": false
+}
+}
