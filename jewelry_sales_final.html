@@ -3262,6 +3262,12 @@
             <button class="settings-btn" onclick="openSettings()" title="Settings">
                 <i class="fas fa-cog"></i>
             </button>
+            
+            <!-- Database Test Button -->
+            <button class="settings-btn" onclick="testFirebaseConnection()" title="Test Database Connection" 
+                    style="right: 60px; background: rgba(255,255,255,0.25);">
+                <i class="fas fa-database"></i>
+            </button>
             <div class="header-content">
                 <h1 class="app-title" id="app-title">💎 Theia Jewelz</h1>
                 <p class="subtitle">Modern Sales Management System</p>
@@ -4463,32 +4469,56 @@
         async function testFirebaseConnection() {
             if (!firestore) {
                 console.error('❌ Firebase not initialized');
+                alert('❌ Firebase not initialized. Check console for details.');
                 return false;
             }
             
             try {
                 console.log('🔥 Testing Firebase connection...');
+                console.log('🌐 Domain:', window.location.hostname);
+                console.log('🌐 Origin:', window.location.origin);
+                console.log('🌐 Protocol:', window.location.protocol);
+                
                 const testDoc = await firestore.collection('connection-test').add({
                     test: true,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     domain: window.location.hostname,
-                    origin: window.location.origin
+                    origin: window.location.origin,
+                    protocol: window.location.protocol,
+                    userAgent: navigator.userAgent,
+                    testTime: new Date().toISOString()
                 });
                 
                 console.log('✅ Firebase connection test successful:', testDoc.id);
+                alert('✅ Firebase connection successful! Document ID: ' + testDoc.id);
                 
-                // Clean up test document
-                await testDoc.delete();
+                // Clean up test document after 5 seconds
+                setTimeout(async () => {
+                    try {
+                        await testDoc.delete();
+                        console.log('🗑️ Test document deleted');
+                    } catch (deleteError) {
+                        console.log('⚠️ Could not delete test document:', deleteError);
+                    }
+                }, 5000);
+                
                 return true;
             } catch (error) {
                 console.error('❌ Firebase connection test failed:', error);
                 console.error('❌ Error code:', error.code);
+                console.error('❌ Error message:', error.message);
+                
+                let errorMessage = 'Firebase connection failed: ' + error.message;
                 
                 if (error.code === 'permission-denied') {
-                    console.error('❌ Permission denied - check Firebase security rules');
-                    alert('❌ Permission denied - Firebase security rules may be blocking access from: ' + window.location.hostname);
+                    errorMessage = 'Permission denied - Firebase security rules blocking access from: ' + window.location.hostname + '\n\nPlease update Firebase security rules to allow writes from this domain.';
+                } else if (error.code === 'failed-precondition') {
+                    errorMessage = 'Firebase configuration error - check project settings';
+                } else if (error.code === 'unavailable') {
+                    errorMessage = 'Firebase service unavailable - check internet connection';
                 }
                 
+                alert('❌ ' + errorMessage);
                 return false;
             }
         }
@@ -4521,11 +4551,22 @@
                     auth = firebase.auth();
                     console.log('🔥 Firestore instance:', firestore);
                     
+                    // Configure Firestore for mobile and web
+                    firestore.settings({
+                        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+                        ignoreUndefinedProperties: true
+                    });
+                    
                     // Enable network for GitHub Pages
                     firestore.enableNetwork().then(() => {
                         console.log('🔥 Firestore network enabled');
+                        // Test connection after network is enabled
+                        setTimeout(() => {
+                            testFirebaseConnection();
+                        }, 1000);
                     }).catch(err => {
                         console.error('❌ Firestore network error:', err);
+                        alert('❌ Firestore network error: ' + err.message);
                     });
                     
                     // Show connection status

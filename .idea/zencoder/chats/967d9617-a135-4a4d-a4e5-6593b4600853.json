@@ -1,9 +1,9 @@
 {
-    "checksum": "3529857b5b2de07d69c49c6d71cd73779168f016b12496dff411ed0bafbc7e73",
+    "checksum": "203610911193b6cb744011fe657ab10026cbb8153d4615c84a8f3647a511a94a",
     "data": {
     "id": "967d9617-a135-4a4d-a4e5-6593b4600853",
     "createdAt": 1752482682853,
-    "updatedAt": 1752489035828,
+    "updatedAt": 1752489948766,
     "title": "Firebase Data Update Issue",
     "messages": [
         {
@@ -1145,6 +1145,61 @@
                 "operationId": "9732eb8a-5b79-4bb3-a079-360a6c33d746"
             },
             "createdAt": 1752489016082,
+            "isInternal": false
+        },
+        {
+            "id": "b4bf1beb-65ff-401d-a461-d1f696fda77f",
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "data not getting stored in firebase when entered via github "
+                },
+                {
+                    "type": "text",
+                    "text": "https://manish0306.github.io/TheiaJewelz_Latest/jewelry_sales_final.html"
+                }
+            ],
+            "context": {
+                "codebaseEnabled": true
+            },
+            "createdAt": 1752489467797,
+            "isInternal": false,
+            "rawContent": {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "data not getting stored in firebase when entered via github "
+                            }
+                        ]
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "https://manish0306.github.io/TheiaJewelz_Latest/jewelry_sales_final.html"
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "473e6a05-9ab2-44d3-8095-b8484129a2d5",
+            "role": "system",
+            "content": [
+                {
+                    "type": "errorText",
+                    "text": "accessToken not found",
+                    "allowRegenerate": true
+                }
+            ],
+            "createdAt": 1752489948765,
             "isInternal": false
         }
     ],
