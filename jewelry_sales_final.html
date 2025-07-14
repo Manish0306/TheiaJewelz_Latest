@@ -3271,7 +3271,12 @@
         <!-- Database Status Display -->
         <div class="status-bar" style="background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; backdrop-filter: blur(10px);">
             <div id="database-status" class="database-status"></div>
-            <div id="save-status" class="save-status"></div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button onclick="quickTestFirebase()" style="background: #4ecdc4; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" title="Test Firebase Connection">
+                    <i class="fas fa-vial"></i> Test DB
+                </button>
+                <div id="save-status" class="save-status"></div>
+            </div>
         </div>
 
         <!-- Settings Modal -->
@@ -5387,23 +5392,43 @@
             document.body.style.overflow = '';
             document.body.style.position = '';
             document.body.style.width = '';
-        }
+        console.log('🔄 Switching to settings tab:', tabName);
+            
+            // Hide all sections
+            const sections = ['general', 'database', 'fields', 'help'];
+            sections.forEach(section => {
+                const element = document.getElementById(section + '-settings');
+                if (element) {
+                    element.style.display = 'none';
+                }
+            })}
 
         // Switch between settings tabs
         function switchSettingsTab(tabName) {
-            // Hide all sections
-            document.getElementById('general-settings').style.display = 'none';
-            document.getElementById('database-settings').style.display = 'none';
-            document.getElementById('fields-settings').style.display = 'none';
-            document.getElementById('help-settings').style.display = 'none';
+                       document.getElementById('help-settings').style.display = 'none';
 
-            // Remove active class from all tabs
+            // Remove active class from all tabs;
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                console.log('✅ Showing section:', tabName + '-settings');
+            } else {
+                console.error('❌ Section not found:', tabName + '-settings');
+            }
+            
+            // Activate the clicked tab
+            const clickedTab = document.querySelector(`[onclick="switchSettingsTab('${tabName}')"]`);
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+                console.log('✅ Activated tab:', tabName);
+            } else {
+                console.error('❌ Tab not found:', tabName);
+            }
             document.querySelectorAll('.settings-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
 
-            // Show selected section and activate tab
-            document.getElementById(tabName + '-settings').style.display = 'block';
+            // Show selected section
+            const targetSection = document.getElementById(tabName + '-settings').style.display = 'block';
             event.target.classList.add('active');
         }
 
@@ -5893,6 +5918,38 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-vial"></i> Test Firebase Connection';
+            }
+        }
+
+        // Quick Firebase test from status bar
+        async function quickTestFirebase() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            try {
+                console.log('🔧 Quick Firebase Test Started');
+                console.log('🌐 Current URL:', window.location.href);
+                console.log('🌐 Current Domain:', window.location.hostname);
+                console.log('🌐 Current Origin:', window.location.origin);
+                console.log('🔥 Firebase Config:', dbConfig.firebase);
+                console.log('🔥 Firebase App:', firebaseApp);
+                console.log('🔥 Firestore:', firestore);
+                
+                if (dbConfig.method === 'firebase') {
+                    await testFirebaseConnection();
+                } else {
+                    await testDatabaseConnection();
+                }
+                
+                alert('✅ Firebase test completed! Check console for details.');
+            } catch (error) {
+                console.error('❌ Quick test error:', error);
+                alert('❌ Firebase test failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         }
 
