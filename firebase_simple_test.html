@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Firebase Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Simple Firebase Test</h1>
+    <p>This test checks if Firebase scripts are loading properly.</p>
+    
+    <button onclick="checkFirebase()">Check Firebase Loading</button>
+    <button onclick="testInitialization()">Test Initialization</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            document.getElementById('results').appendChild(div);
+            console.log(message);
+        }
+
+        function checkFirebase() {
+            document.getElementById('results').innerHTML = '';
+            
+            // Check if Firebase is defined
+            if (typeof firebase === 'undefined') {
+                log('❌ Firebase is not defined. Scripts failed to load.', 'error');
+                log('🔧 Possible solutions:', 'info');
+                log('- Check internet connection', 'info');
+                log('- Clear browser cache', 'info');
+                log('- Try different browser', 'info');
+                return false;
+            }
+            
+            log('✅ Firebase global object is available', 'success');
+            
+            // Check Firebase app
+            if (typeof firebase.initializeApp === 'undefined') {
+                log('❌ Firebase app not available', 'error');
+                return false;
+            }
+            log('✅ Firebase app is available', 'success');
+            
+            // Check Firestore
+            if (typeof firebase.firestore === 'undefined') {
+                log('❌ Firebase Firestore not available', 'error');
+                return false;
+            }
+            log('✅ Firebase Firestore is available', 'success');
+            
+            return true;
+        }
+
+        function testInitialization() {
+            if (!checkFirebase()) {
+                return;
+            }
+            
+            try {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBEbRfCjqEOfoLTdrCPCuGHVRIOBPIUEIg",
+                    authDomain: "theiajewelz.firebaseapp.com",
+                    projectId: "theiajewelz",
+                    storageBucket: "theiajewelz.firebasestorage.app",
+                    messagingSenderId: "328369793227",
+                    appId: "1:328369793227:web:03c7cbf22b3c2f05cdd34e",
+                    measurementId: "G-1BKG612HJG"
+                };
+
+                log('🔄 Attempting to initialize Firebase...', 'info');
+                
+                let app;
+                // Check if Firebase app already exists
+                if (firebase.apps.length === 0) {
+                    // Initialize Firebase
+                    app = firebase.initializeApp(firebaseConfig);
+                    log('✅ Firebase initialized successfully!', 'success');
+                } else {
+                    // Use existing app
+                    app = firebase.app();
+                    log('✅ Firebase app already exists, using existing instance', 'success');
+                }
+                
+                // Get Firestore instance
+                const firestore = firebase.firestore();
+                log('✅ Firestore instance created successfully!', 'success');
+                
+                log('🎉 All tests passed! Firebase is working correctly.', 'success');
+                
+            } catch (error) {
+                log('❌ Initialization failed: ' + error.message, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = function() {
+            log('🚀 Simple Firebase Test Loaded', 'info');
+            
+            // Add Firebase scripts dynamically
+            const script1 = document.createElement('script');
+            script1.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js';
+            script1.onload = function() {
+                log('✅ Firebase app script loaded', 'success');
+                
+                const script2 = document.createElement('script');
+                script2.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js';
+                script2.onload = function() {
+                    log('✅ Firebase Firestore script loaded', 'success');
+                    log('📋 Ready to test!', 'info');
+                };
+                script2.onerror = function() {
+                    log('❌ Failed to load Firebase Firestore script', 'error');
+                };
+                document.head.appendChild(script2);
+            };
+            script1.onerror = function() {
+                log('❌ Failed to load Firebase app script', 'error');
+            };
+            document.head.appendChild(script1);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Connection Test</title>
+    <!-- Firebase v8 SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px 0; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Firebase Connection Test</h1>
+    
+    <div id="status"></div>
+    
+    <button onclick="testFirebase()">Test Firebase Connection</button>
+    <button onclick="testWrite()">Test Write to Firestore</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEbRfCjqEOfoLTdrCPCuGHVRIOBPIUEIg",
+            authDomain: "theiajewelz.firebaseapp.com",
+            projectId: "theiajewelz",
+            storageBucket: "theiajewelz.firebasestorage.app",
+            messagingSenderId: "328369793227",
+            appId: "1:328369793227:web:03c7cbf22b3c2f05cdd34e",
+            measurementId: "G-1BKG612HJG"
+        };
+
+        let app, firestore;
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            document.getElementById('results').appendChild(div);
+            console.log(message);
+        }
+
+        function testFirebase() {
+            try {
+                log('🔄 Testing Firebase initialization...', 'info');
+                
+                // Check if Firebase app already exists
+                if (firebase.apps.length === 0) {
+                    // Initialize Firebase
+                    app = firebase.initializeApp(firebaseConfig);
+                    log('✅ Firebase initialized successfully!', 'success');
+                } else {
+                    // Use existing app
+                    app = firebase.app();
+                    log('✅ Firebase app already exists, using existing instance', 'success');
+                }
+                
+                firestore = firebase.firestore();
+                
+                log('📋 Project ID: ' + firebaseConfig.projectId, 'info');
+                log('📋 Auth Domain: ' + firebaseConfig.authDomain, 'info');
+                
+            } catch (error) {
+                log('❌ Firebase initialization failed: ' + error.message, 'error');
+                console.error('Firebase error:', error);
+            }
+        }
+
+        async function testWrite() {
+            if (!firestore) {
+                log('❌ Please test Firebase connection first!', 'error');
+                return;
+            }
+
+            try {
+                log('🔄 Testing write to Firestore...', 'info');
+                
+                const testData = {
+                    test: true,
+                    message: 'Hello from Firebase test!',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    created: new Date().toISOString()
+                };
+                
+                const docRef = await firestore.collection('test').add(testData);
+                
+                log('✅ Write successful! Document ID: ' + docRef.id, 'success');
+                log('📊 Check Firebase Console > Firestore > test collection', 'info');
+                
+            } catch (error) {
+                log('❌ Write failed: ' + error.message, 'error');
+                console.error('Write error:', error);
+                
+                // Common error messages
+                if (error.code === 'permission-denied') {
+                    log('🔒 Permission denied. Check Firestore security rules.', 'error');
+                } else if (error.code === 'unavailable') {
+                    log('🌐 Service unavailable. Check internet connection.', 'error');
+                }
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Auto-run Firebase test
+        window.onload = function() {
+            log('🚀 Firebase Diagnostic Tool Loaded', 'info');
+            
+            // Check if Firebase is loaded
+            if (typeof firebase === 'undefined') {
+                log('❌ Firebase is not loaded! Check internet connection.', 'error');
+                return;
+            }
+            
+            log('✅ Firebase SDK loaded successfully', 'success');
+            testFirebase();
+        };
+    </script>
+</body>
+</html>

@@ -34,6 +34,11 @@
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase v8 SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <style>
         /* ======== MODERN DESIGN SYSTEM ======== */
         :root {
@@ -208,6 +213,44 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        /* ======== STATUS DISPLAY ======== */
+        .database-status, .save-status {
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            transition: all var(--transition-normal);
+        }
+
+        .database-status.success {
+            background: var(--success-100);
+            color: var(--success-600);
+        }
+
+        .database-status.warning {
+            background: var(--warning-100);
+            color: var(--warning-600);
+        }
+
+        .database-status.error {
+            background: var(--error-100);
+            color: var(--error-600);
+        }
+
+        .save-status.loading {
+            background: var(--primary-100);
+            color: var(--primary-600);
+        }
+
+        .save-status.success {
+            background: var(--success-100);
+            color: var(--success-600);
+        }
+
+        .save-status.error {
+            background: var(--error-100);
+            color: var(--error-600);
         }
 
         /* ======== MAIN CONTAINER ======== */
@@ -3225,6 +3268,12 @@
             </div>
         </header>
 
+        <!-- Database Status Display -->
+        <div class="status-bar" style="background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; backdrop-filter: blur(10px);">
+            <div id="database-status" class="database-status"></div>
+            <div id="save-status" class="save-status"></div>
+        </div>
+
         <!-- Settings Modal -->
         <div class="settings-modal" id="settings-modal">
             <div class="settings-content">
@@ -3241,6 +3290,9 @@
                         </button>
                         <button class="settings-tab" onclick="switchSettingsTab('fields')">
                             <i class="fas fa-plus-square"></i> Custom Fields
+                        </button>
+                        <button class="settings-tab" onclick="switchSettingsTab('database')">
+                            <i class="fas fa-database"></i> Database
                         </button>
                         <button class="settings-tab" onclick="switchSettingsTab('help')">
                             <i class="fas fa-question-circle"></i> Help
@@ -3305,6 +3357,69 @@
                             <button class="add-field-btn" onclick="addCustomField('purchases')">
                                 <i class="fas fa-plus"></i> Add Purchase Field
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Database Settings -->
+                    <div id="database-settings" class="settings-section" style="display: none;">
+                        <h3><i class="fas fa-database"></i> Database Settings</h3>
+                        
+                        <div class="form-group">
+                            <label for="database-method">Database Method</label>
+                            <select id="database-method" class="settings-input" onchange="changeDatabaseMethod()">
+                                <option value="firebase">🔥 Firebase Firestore (Recommended)</option>
+                                <option value="google-sheets">📊 Google Sheets</option>
+                                <option value="local">💾 Local Storage Only</option>
+                            </select>
+                            <small style="color: var(--neutral-500); font-size: 12px; margin-top: 5px; display: block;">
+                                Choose how you want to store your sales data
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="auto-save-toggle">Auto-save Sales</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="auto-save-toggle" checked onchange="toggleAutoSave()">
+                                <span>Automatically save sales to database</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="show-status-toggle">Show Status</label>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" id="show-status-toggle" checked onchange="toggleShowStatus()">
+                                <span>Show database connection and save status</span>
+                            </div>
+                        </div>
+
+                        <div class="database-status-info" style="background: var(--neutral-100); padding: 12px; border-radius: 6px; margin-top: 15px;">
+                            <h4 style="margin: 0 0 8px 0; color: var(--neutral-700);"><i class="fas fa-info-circle"></i> Current Status</h4>
+                            <p style="margin: 0; font-size: 13px; color: var(--neutral-600);">
+                                <strong>Method:</strong> <span id="current-db-method">Firebase Firestore</span><br>
+                                <strong>Connection:</strong> <span id="current-db-status">Connected</span><br>
+                                <strong>Auto-save:</strong> <span id="current-auto-save">Enabled</span>
+                            </p>
+                        </div>
+
+                        <div class="database-actions" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="testDatabaseConnection()">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                            <button class="btn btn-secondary" onclick="syncLocalData()">
+                                <i class="fas fa-sync"></i> Sync Local Data
+                            </button>
+                            <button class="btn btn-info" onclick="downloadBackup()">
+                                <i class="fas fa-download"></i> Download Backup
+                            </button>
+                        </div>
+
+                        <div class="database-help" style="margin-top: 20px; padding: 12px; background: var(--primary-50); border-radius: 6px;">
+                            <h4 style="margin: 0 0 8px 0; color: var(--primary-700);"><i class="fas fa-lightbulb"></i> Database Options</h4>
+                            <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: var(--neutral-600);">
+                                <li><strong>Firebase:</strong> Free up to 50K reads/20K writes per day. Real-time sync.</li>
+                                <li><strong>Google Sheets:</strong> Completely free. Easy to view/edit data.</li>
+                                <li><strong>Local Storage:</strong> Stores data only in your browser. No internet required.</li>
+                            </ul>
                         </div>
                     </div>
 
@@ -3632,18 +3747,7 @@
                                 💡 You can select multiple categories for combination items (e.g., Necklace + Earrings set)
                             </p>
 
-                            <!-- Debug Test Buttons -->
-                            <div style="margin-top: 5px; display: flex; gap: 5px; flex-wrap: wrap;">
-                                <button type="button" onclick="testDropdown()" style="background: #ff6b6b; color: white; padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px;">
-                                    🧪 Test Dropdown
-                                </button>
-                                <button type="button" onclick="resetDropdown()" style="background: #4ecdc4; color: white; padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px;">
-                                    🔄 Reset Dropdown
-                                </button>
-                                <button type="button" onclick="forceOpen()" style="background: #2ecc71; color: white; padding: 5px 10px; border: none; border-radius: 4px; font-size: 12px;">
-                                    🔓 Force Open
-                                </button>
-                            </div>
+
 
                         </div>
 
@@ -4291,6 +4395,362 @@
         let selectedCategories = [];
         let isCategoryDropdownOpen = false;
 
+        // ======== DATABASE CONFIGURATION ========
+        // Database configuration object
+        const dbConfig = {
+            // Choose your preferred database method:
+            // 'firebase' - Firebase Firestore (recommended)
+            // 'google-sheets' - Google Sheets
+            // 'local' - Local storage only
+            method: 'firebase',
+            
+            // Firebase configuration
+            firebase: {
+                apiKey: "AIzaSyBEbRfCjqEOfoLTdrCPCuGHVRIOBPIUEIg",
+                authDomain: "theiajewelz.firebaseapp.com",
+                projectId: "theiajewelz",
+                storageBucket: "theiajewelz.firebasestorage.app",
+                messagingSenderId: "328369793227",
+                appId: "1:328369793227:web:03c7cbf22b3c2f05cdd34e",
+                measurementId: "G-1BKG612HJG"
+            },
+            
+            // Google Sheets configuration
+            googleSheets: {
+                scriptUrl: "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE",
+                enabled: true
+            },
+            
+            // Auto-save settings
+            autoSave: true,
+            showSaveStatus: true
+        };
+
+        // Database connection objects
+        let firebaseApp = null;
+        let firestore = null;
+        let auth = null;
+
+        // ======== DATABASE INITIALIZATION ========
+        function initializeDatabase() {
+            console.log('🔄 Initializing database...', dbConfig.method);
+            
+            switch(dbConfig.method) {
+                case 'firebase':
+                    return initializeFirebase();
+                case 'google-sheets':
+                    return initializeGoogleSheets();
+                case 'local':
+                    return initializeLocalStorage();
+                default:
+                    console.warn('Unknown database method, falling back to local storage');
+                    return initializeLocalStorage();
+            }
+        }
+
+        // Initialize Firebase
+        function initializeFirebase() {
+            try {
+                // Check if Firebase is configured
+                if (!dbConfig.firebase.apiKey || dbConfig.firebase.apiKey === "YOUR_API_KEY_HERE") {
+                    console.warn('🔥 Firebase not configured, using local storage instead');
+                    return initializeLocalStorage();
+                }
+
+                // Initialize Firebase (check if already exists)
+                if (!firebaseApp) {
+                    console.log('🔥 Initializing Firebase with config:', dbConfig.firebase);
+                    
+                    // Check if Firebase app already exists
+                    if (firebase.apps.length === 0) {
+                        firebaseApp = firebase.initializeApp(dbConfig.firebase);
+                        console.log('🔥 Firebase initialized successfully');
+                    } else {
+                        firebaseApp = firebase.app();
+                        console.log('🔥 Firebase app already exists, using existing instance');
+                    }
+                    
+                    firestore = firebase.firestore();
+                    auth = firebase.auth();
+                    console.log('🔥 Firestore instance:', firestore);
+                    
+                    // Show connection status
+                    showDatabaseStatus('Firebase connected', 'success');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('❌ Firebase initialization error:', error);
+                
+                // Handle duplicate app error specifically
+                if (error.code === 'app/duplicate-app') {
+                    console.log('🔥 Using existing Firebase app');
+                    firebaseApp = firebase.app();
+                    firestore = firebase.firestore();
+                    auth = firebase.auth();
+                    showDatabaseStatus('Firebase connected', 'success');
+                    return true;
+                }
+                
+                alert('❌ Firebase initialization failed: ' + error.message);
+                showDatabaseStatus('Firebase connection failed', 'error');
+                return initializeLocalStorage();
+            }
+        }
+
+        // Initialize Google Sheets
+        function initializeGoogleSheets() {
+            try {
+                if (!dbConfig.googleSheets.scriptUrl || dbConfig.googleSheets.scriptUrl === "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
+                    console.warn('📊 Google Sheets not configured, using local storage instead');
+                    return initializeLocalStorage();
+                }
+                
+                console.log('📊 Google Sheets initialized');
+                showDatabaseStatus('Google Sheets connected', 'success');
+                return true;
+            } catch (error) {
+                console.error('❌ Google Sheets initialization error:', error);
+                showDatabaseStatus('Google Sheets connection failed', 'error');
+                return initializeLocalStorage();
+            }
+        }
+
+        // Initialize Local Storage
+        function initializeLocalStorage() {
+            console.log('💾 Using local storage');
+            showDatabaseStatus('Local storage active', 'warning');
+            return true;
+        }
+
+        // ======== DATABASE SAVE FUNCTIONS ========
+        async function saveToDatabase(saleData) {
+            if (!dbConfig.autoSave) return { success: true, message: 'Auto-save disabled' };
+            
+            console.log('💾 Saving to database:', saleData);
+            showSaveStatus('Saving...', 'loading');
+            
+            try {
+                let result;
+                
+                switch(dbConfig.method) {
+                    case 'firebase':
+                        result = await saveToFirebase(saleData);
+                        break;
+                    case 'google-sheets':
+                        result = await saveToGoogleSheets(saleData);
+                        break;
+                    case 'local':
+                    default:
+                        result = await saveToLocalStorage(saleData);
+                        break;
+                }
+                
+                if (result.success) {
+                    showSaveStatus('Saved successfully', 'success');
+                    console.log('✅ Save successful:', result.message);
+                } else {
+                    showSaveStatus('Save failed', 'error');
+                    console.error('❌ Save failed:', result.error);
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('❌ Database save error:', error);
+                showSaveStatus('Save error', 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Save to Firebase
+        async function saveToFirebase(saleData) {
+            console.log('🔥 Attempting to save to Firebase:', saleData);
+            
+            if (!firestore) {
+                const error = 'Firebase not initialized';
+                console.error('❌', error);
+                alert('❌ Firebase Error: ' + error);
+                return { success: false, error: error };
+            }
+            
+            try {
+                console.log('🔥 Firestore instance exists, saving to collection...');
+                const docRef = await firestore.collection('sales').add({
+                    ...saleData,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdAt: new Date().toISOString()
+                });
+                
+                console.log('✅ Successfully saved to Firebase with ID:', docRef.id);
+                return {
+                    success: true,
+                    message: 'Saved to Firebase',
+                    id: docRef.id
+                };
+            } catch (error) {
+                console.error('❌ Firebase save error:', error);
+                alert('❌ Firebase Save Error: ' + error.message);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Save to Google Sheets
+        async function saveToGoogleSheets(saleData) {
+            if (!dbConfig.googleSheets.scriptUrl || dbConfig.googleSheets.scriptUrl === "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE") {
+                return { success: false, error: 'Google Sheets not configured' };
+            }
+            
+            try {
+                const response = await fetch(dbConfig.googleSheets.scriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(saleData)
+                });
+                
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Google Sheets save error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Save to Local Storage
+        async function saveToLocalStorage(saleData) {
+            try {
+                const existingData = JSON.parse(localStorage.getItem('theiaJewelz_sales') || '[]');
+                existingData.push({
+                    ...saleData,
+                    id: Date.now().toString(),
+                    timestamp: new Date().toISOString()
+                });
+                
+                localStorage.setItem('theiaJewelz_sales', JSON.stringify(existingData));
+                
+                return {
+                    success: true,
+                    message: 'Saved to local storage',
+                    id: saleData.id
+                };
+            } catch (error) {
+                console.error('Local storage save error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // ======== DATABASE LOAD FUNCTIONS ========
+        async function loadFromDatabase() {
+            console.log('📥 Loading from database...');
+            
+            try {
+                let result;
+                
+                switch(dbConfig.method) {
+                    case 'firebase':
+                        result = await loadFromFirebase();
+                        break;
+                    case 'google-sheets':
+                        result = await loadFromGoogleSheets();
+                        break;
+                    case 'local':
+                    default:
+                        result = await loadFromLocalStorage();
+                        break;
+                }
+                
+                if (result.success && result.data) {
+                    salesData = result.data;
+                    console.log(`✅ Loaded ${salesData.length} sales records`);
+                    updateDashboard();
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('❌ Database load error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Load from Firebase
+        async function loadFromFirebase() {
+            if (!firestore) {
+                return { success: false, error: 'Firebase not initialized' };
+            }
+            
+            try {
+                const snapshot = await firestore.collection('sales')
+                    .orderBy('timestamp', 'desc')
+                    .limit(1000)
+                    .get();
+                
+                const data = [];
+                snapshot.forEach(doc => {
+                    data.push({ id: doc.id, ...doc.data() });
+                });
+                
+                return {
+                    success: true,
+                    data: data,
+                    message: `Loaded ${data.length} records from Firebase`
+                };
+            } catch (error) {
+                console.error('Firebase load error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Load from Google Sheets
+        async function loadFromGoogleSheets() {
+            // This would require additional API setup
+            return { success: false, error: 'Google Sheets loading not implemented yet' };
+        }
+
+        // Load from Local Storage
+        async function loadFromLocalStorage() {
+            try {
+                const data = JSON.parse(localStorage.getItem('theiaJewelz_sales') || '[]');
+                return {
+                    success: true,
+                    data: data,
+                    message: `Loaded ${data.length} records from local storage`
+                };
+            } catch (error) {
+                console.error('Local storage load error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // ======== STATUS DISPLAY FUNCTIONS ========
+        function showDatabaseStatus(message, type) {
+            if (!dbConfig.showSaveStatus) return;
+            
+            const statusDiv = document.getElementById('database-status');
+            if (statusDiv) {
+                statusDiv.textContent = message;
+                statusDiv.className = `database-status ${type}`;
+            }
+        }
+
+        function showSaveStatus(message, type) {
+            if (!dbConfig.showSaveStatus) return;
+            
+            const statusDiv = document.getElementById('save-status');
+            if (statusDiv) {
+                statusDiv.textContent = message;
+                statusDiv.className = `save-status ${type}`;
+                
+                // Auto-hide after 3 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusDiv.textContent = '';
+                        statusDiv.className = 'save-status';
+                    }, 3000);
+                }
+            }
+        }
+
         // Function to handle record display selection
         function changeRecordDisplay() {
             const selector = document.getElementById('record-display-selector');
@@ -4450,94 +4910,7 @@
             }
         }
 
-        // Test function to debug dropdown
-        function testDropdown() {
-            console.log('🧪 Testing dropdown functionality...');
-            const dropdown = document.getElementById('category-dropdown');
 
-            if (dropdown) {
-                console.log('✅ Dropdown element found');
-                console.log('Current display:', dropdown.style.display);
-                console.log('Current visibility:', dropdown.style.visibility);
-                console.log('Current opacity:', dropdown.style.opacity);
-
-                // Force show with all possible overrides
-                dropdown.style.setProperty('display', 'block', 'important');
-                dropdown.style.setProperty('visibility', 'visible', 'important');
-                dropdown.style.setProperty('opacity', '1', 'important');
-                dropdown.style.setProperty('position', 'absolute', 'important');
-                dropdown.style.setProperty('top', '100%', 'important');
-                dropdown.style.setProperty('left', '0', 'important');
-                dropdown.style.setProperty('right', '0', 'important');
-                dropdown.style.setProperty('z-index', '99999', 'important');
-                dropdown.style.setProperty('background', 'white', 'important');
-                dropdown.style.setProperty('border', '2px solid red', 'important');
-                dropdown.style.setProperty('max-height', '250px', 'important');
-
-                console.log('🎯 Forced dropdown to show - check if you can see it now!');
-
-                // Auto-hide after 5 seconds
-                setTimeout(() => {
-                    dropdown.style.display = 'none';
-                    console.log('🔒 Auto-closed dropdown');
-                }, 5000);
-            } else {
-                console.error('❌ Dropdown element not found!');
-            }
-        }
-
-        // Reset dropdown function
-        function resetDropdown() {
-            console.log('🔄 Resetting dropdown...');
-
-            // Force close first
-            isCategoryDropdownOpen = false;
-
-            // Reinitialize
-            initializeCategoryDropdown();
-
-            console.log('✅ Dropdown reset complete');
-        }
-
-        // Force open function
-        function forceOpen() {
-            console.log('🔓 Force opening dropdown...');
-
-            const dropdown = document.getElementById('category-dropdown');
-            const display = document.getElementById('category-display');
-            const arrow = document.getElementById('category-arrow');
-
-            if (dropdown && display && arrow) {
-                // Force reset first
-                isCategoryDropdownOpen = false;
-
-                // Clear all styles
-                dropdown.style.cssText = '';
-
-                // Force visible with simple styles
-                dropdown.style.display = 'block';
-                dropdown.style.position = 'absolute';
-                dropdown.style.top = '100%';
-                dropdown.style.left = '0';
-                dropdown.style.right = '0';
-                dropdown.style.zIndex = '99999';
-                dropdown.style.background = 'white';
-                dropdown.style.border = '2px solid #007bff';
-                dropdown.style.borderTop = 'none';
-                dropdown.style.borderRadius = '0 0 8px 8px';
-                dropdown.style.maxHeight = '250px';
-                dropdown.style.overflowY = 'auto';
-                dropdown.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-
-                // Update states
-                display.classList.add('active');
-                display.setAttribute('aria-expanded', 'true');
-                arrow.style.transform = 'rotate(180deg)';
-                isCategoryDropdownOpen = true;
-
-                console.log('✅ Forced dropdown open - should be visible now!');
-            }
-        }
 
         function updateSelectedCategories() {
             const checkboxes = document.querySelectorAll('.category-options input[type="checkbox"]');
@@ -4854,6 +5227,36 @@
                     if (settings.currencySymbol) {
                         document.getElementById('currency-symbol').value = settings.currencySymbol;
                     }
+                    
+                    // Load database settings
+                    if (settings.database) {
+                        dbConfig.method = settings.database.method || 'firebase';
+                        dbConfig.autoSave = settings.database.autoSave !== undefined ? settings.database.autoSave : true;
+                        dbConfig.showSaveStatus = settings.database.showSaveStatus !== undefined ? settings.database.showSaveStatus : true;
+                        
+                        // Update UI elements
+                        const methodSelect = document.getElementById('database-method');
+                        const autoSaveToggle = document.getElementById('auto-save-toggle');
+                        const showStatusToggle = document.getElementById('show-status-toggle');
+                        
+                        if (methodSelect) methodSelect.value = dbConfig.method;
+                        if (autoSaveToggle) autoSaveToggle.checked = dbConfig.autoSave;
+                        if (showStatusToggle) showStatusToggle.checked = dbConfig.showSaveStatus;
+                        
+                        // Update status displays
+                        document.getElementById('current-db-method').textContent = 
+                            dbConfig.method === 'firebase' ? 'Firebase Firestore' :
+                            dbConfig.method === 'google-sheets' ? 'Google Sheets' :
+                            'Local Storage';
+                        document.getElementById('current-auto-save').textContent = 
+                            dbConfig.autoSave ? 'Enabled' : 'Disabled';
+                        
+                        // Show/hide status bar
+                        const statusBar = document.querySelector('.status-bar');
+                        if (statusBar) {
+                            statusBar.style.display = dbConfig.showSaveStatus ? 'flex' : 'none';
+                        }
+                    }
                 } catch (error) {
                     console.error('Error loading settings:', error);
                 }
@@ -4866,7 +5269,12 @@
                 appName: document.getElementById('app-name-input').value,
                 companyName: document.getElementById('company-name').value,
                 currencySymbol: document.getElementById('currency-symbol').value,
-                customFields: customFields
+                customFields: customFields,
+                database: {
+                    method: dbConfig.method,
+                    autoSave: dbConfig.autoSave,
+                    showSaveStatus: dbConfig.showSaveStatus
+                }
             };
 
             localStorage.setItem('theiaJewelzSettings', JSON.stringify(settings));
@@ -4913,6 +5321,7 @@
         function switchSettingsTab(tabName) {
             // Hide all sections
             document.getElementById('general-settings').style.display = 'none';
+            document.getElementById('database-settings').style.display = 'none';
             document.getElementById('fields-settings').style.display = 'none';
             document.getElementById('help-settings').style.display = 'none';
 
@@ -5304,12 +5713,176 @@
             }
         });
 
+        // ======== DATABASE SETTINGS FUNCTIONS ========
+        
+        // Change database method
+        function changeDatabaseMethod() {
+            const method = document.getElementById('database-method').value;
+            dbConfig.method = method;
+            
+            // Update status display
+            document.getElementById('current-db-method').textContent = 
+                method === 'firebase' ? 'Firebase Firestore' :
+                method === 'google-sheets' ? 'Google Sheets' :
+                'Local Storage';
+            
+            // Reinitialize database
+            initializeDatabase();
+            
+            // Save settings
+            saveSettings();
+            
+            showSuccess(`Database method changed to ${method}`);
+        }
+
+        // Toggle auto-save
+        function toggleAutoSave() {
+            const autoSave = document.getElementById('auto-save-toggle').checked;
+            dbConfig.autoSave = autoSave;
+            
+            document.getElementById('current-auto-save').textContent = 
+                autoSave ? 'Enabled' : 'Disabled';
+            
+            saveSettings();
+            showSuccess(`Auto-save ${autoSave ? 'enabled' : 'disabled'}`);
+        }
+
+        // Toggle show status
+        function toggleShowStatus() {
+            const showStatus = document.getElementById('show-status-toggle').checked;
+            dbConfig.showSaveStatus = showStatus;
+            
+            const statusBar = document.querySelector('.status-bar');
+            if (statusBar) {
+                statusBar.style.display = showStatus ? 'flex' : 'none';
+            }
+            
+            saveSettings();
+            showSuccess(`Status display ${showStatus ? 'enabled' : 'disabled'}`);
+        }
+
+        // Test database connection
+        async function testDatabaseConnection() {
+            showSaveStatus('Testing connection...', 'loading');
+            
+            try {
+                console.log('🔧 Testing database connection...');
+                console.log('🔧 Database method:', dbConfig.method);
+                console.log('🔧 Firebase app:', firebaseApp);
+                console.log('🔧 Firestore:', firestore);
+                
+                const testData = {
+                    id: 'test-' + Date.now(),
+                    itemName: 'Test Item',
+                    category: 'test',
+                    costPrice: 100,
+                    sellingPrice: 150,
+                    profit: 50,
+                    saleDate: new Date().toISOString().split('T')[0],
+                    customerName: 'Test Customer',
+                    customerPhone: 'Test Phone',
+                    customerAddress: 'Test Address',
+                    createdAt: new Date().toISOString(),
+                    isTest: true
+                };
+                
+                console.log('🔧 Test data:', testData);
+                
+                const result = await saveToDatabase(testData);
+                
+                if (result.success) {
+                    showSuccess('✅ Database connection successful!');
+                    document.getElementById('current-db-status').textContent = 'Connected';
+                    alert('✅ SUCCESS!\n\nDatabase connection test passed!\nCheck Firebase Console for the test document.');
+                } else {
+                    showError('❌ Database connection failed: ' + result.error);
+                    document.getElementById('current-db-status').textContent = 'Failed';
+                    alert('❌ FAILED!\n\nDatabase connection test failed:\n' + result.error);
+                }
+            } catch (error) {
+                showError('❌ Connection test error: ' + error.message);
+                document.getElementById('current-db-status').textContent = 'Error';
+                alert('❌ ERROR!\n\nConnection test error:\n' + error.message);
+            }
+        }
+
+        // Sync local data to database
+        async function syncLocalData() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('jewelrySales') || '[]');
+                if (localData.length === 0) {
+                    showError('No local data to sync');
+                    return;
+                }
+                
+                showSaveStatus('Syncing local data...', 'loading');
+                
+                let synced = 0;
+                let failed = 0;
+                
+                for (const sale of localData) {
+                    try {
+                        const result = await saveToDatabase(sale);
+                        if (result.success) {
+                            synced++;
+                        } else {
+                            failed++;
+                        }
+                    } catch (error) {
+                        failed++;
+                    }
+                }
+                
+                showSuccess(`✅ Sync complete! ${synced} records synced, ${failed} failed`);
+            } catch (error) {
+                showError('❌ Sync error: ' + error.message);
+            }
+        }
+
+        // Download backup
+        function downloadBackup() {
+            try {
+                const backupData = {
+                    timestamp: new Date().toISOString(),
+                    version: '1.0',
+                    salesData: salesData,
+                    customersData: customersData,
+                    settings: {
+                        appName: document.getElementById('app-name-input').value,
+                        companyName: document.getElementById('company-name').value,
+                        currencySymbol: document.getElementById('currency-symbol').value,
+                        databaseMethod: dbConfig.method
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `theia-jewelz-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showSuccess('✅ Backup downloaded successfully!');
+            } catch (error) {
+                showError('❌ Backup error: ' + error.message);
+            }
+        }
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
             registerServiceWorker();
             setupPWA();
             loadSettings(); // Load saved settings
+
+            // Initialize database
+            initializeDatabase();
+
+            // Load existing data from database
+            loadFromDatabase();
 
             // Initialize category dropdown with a small delay to ensure DOM is ready
             setTimeout(initializeCategoryDropdown, 100);
@@ -6894,7 +7467,7 @@
                 // Add to array
                 salesData.push(saleRecord);
 
-                // Save to localStorage
+                // Save to localStorage (fallback)
                 try {
                     localStorage.setItem('jewelrySales', JSON.stringify(salesData));
                 } catch (storageError) {
@@ -6902,6 +7475,19 @@
                     alert('⚠️ Storage Error!\n\nFailed to save the sale record to local storage:\n\n' + storageError.message + '\n\nThis might be due to storage limits or browser settings. Please try clearing some browser data or contact support.');
                     return;
                 }
+
+                // Save to database (Firebase/Google Sheets)
+                saveToDatabase(saleRecord).then(result => {
+                    if (result.success) {
+                        console.log('✅ Sale saved to database:', result.message);
+                    } else {
+                        console.error('❌ Database save failed:', result.error);
+                        showError('Database save failed: ' + result.error);
+                    }
+                }).catch(error => {
+                    console.error('❌ Database save error:', error);
+                    showError('Database save error: ' + error.message);
+                });
 
                 // Clear form
                 document.getElementById('sales-form').reset();

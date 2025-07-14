@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Final Test</title>
+    <!-- Firebase v8 SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .test-section { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Firebase Final Test</h1>
+    <p>Complete Firebase integration test for Theia Jewelz</p>
+    
+    <div class="test-section">
+        <h3>Step 1: Basic Tests</h3>
+        <button onclick="testBasic()">Test Basic Firebase</button>
+        <button onclick="testConnection()">Test Connection</button>
+        <button onclick="testWrite()">Test Write</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Step 2: Sales Data Test</h3>
+        <button onclick="testSalesData()">Test Sales Data Write</button>
+        <button onclick="testReadSales()">Test Read Sales Data</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEbRfCjqEOfoLTdrCPCuGHVRIOBPIUEIg",
+            authDomain: "theiajewelz.firebaseapp.com",
+            projectId: "theiajewelz",
+            storageBucket: "theiajewelz.firebasestorage.app",
+            messagingSenderId: "328369793227",
+            appId: "1:328369793227:web:03c7cbf22b3c2f05cdd34e",
+            measurementId: "G-1BKG612HJG"
+        };
+
+        let app, firestore;
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            document.getElementById('results').appendChild(div);
+            console.log(message);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function testBasic() {
+            clearResults();
+            log('🔄 Testing basic Firebase setup...', 'info');
+            
+            try {
+                // Check if Firebase is loaded
+                if (typeof firebase === 'undefined') {
+                    log('❌ Firebase not loaded', 'error');
+                    return;
+                }
+                log('✅ Firebase SDK loaded', 'success');
+                
+                // Initialize Firebase
+                if (firebase.apps.length === 0) {
+                    app = firebase.initializeApp(firebaseConfig);
+                    log('✅ Firebase initialized', 'success');
+                } else {
+                    app = firebase.app();
+                    log('✅ Firebase app already exists', 'success');
+                }
+                
+                firestore = firebase.firestore();
+                log('✅ Firestore instance created', 'success');
+                
+                log('🎉 Basic setup complete!', 'success');
+                
+            } catch (error) {
+                log('❌ Basic setup failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testConnection() {
+            if (!firestore) {
+                log('❌ Please run basic test first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing Firestore connection...', 'info');
+            
+            try {
+                // Try to get the app info
+                const appInfo = {
+                    name: app.name,
+                    projectId: app.options.projectId,
+                    authDomain: app.options.authDomain
+                };
+                
+                log('✅ Connected to project: ' + appInfo.projectId, 'success');
+                log('✅ Auth domain: ' + appInfo.authDomain, 'success');
+                
+            } catch (error) {
+                log('❌ Connection test failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testWrite() {
+            if (!firestore) {
+                log('❌ Please run basic test first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing write operation...', 'info');
+            
+            try {
+                const testData = {
+                    test: true,
+                    message: 'Firebase write test successful!',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    created: new Date().toISOString()
+                };
+                
+                const docRef = await firestore.collection('test').add(testData);
+                log('✅ Write successful! Document ID: ' + docRef.id, 'success');
+                log('📊 Check Firebase Console > Firestore > test collection', 'info');
+                
+            } catch (error) {
+                log('❌ Write failed: ' + error.message, 'error');
+                
+                if (error.code === 'permission-denied') {
+                    log('🔒 Permission denied - check Firestore security rules', 'error');
+                } else if (error.code === 'unavailable') {
+                    log('🌐 Service unavailable - check internet connection', 'error');
+                }
+            }
+        }
+
+        async function testSalesData() {
+            if (!firestore) {
+                log('❌ Please run basic test first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing sales data write...', 'info');
+            
+            try {
+                const saleData = {
+                    id: Date.now(),
+                    itemName: 'Gold Ring Test',
+                    category: 'rings',
+                    categories: ['rings', 'gold'],
+                    costPrice: 2500,
+                    sellingPrice: 3000,
+                    profit: 500,
+                    saleDate: new Date().toISOString().split('T')[0],
+                    customerName: 'Test Customer',
+                    customerPhone: '+91 9876543210',
+                    customerAddress: '123 Test Street, Test City',
+                    createdAt: new Date().toISOString(),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                const docRef = await firestore.collection('sales').add(saleData);
+                log('✅ Sales data written successfully! ID: ' + docRef.id, 'success');
+                log('📊 Check Firebase Console > Firestore > sales collection', 'info');
+                
+            } catch (error) {
+                log('❌ Sales data write failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testReadSales() {
+            if (!firestore) {
+                log('❌ Please run basic test first', 'error');
+                return;
+            }
+            
+            log('🔄 Testing read sales data...', 'info');
+            
+            try {
+                const salesSnapshot = await firestore.collection('sales').limit(3).get();
+                
+                if (salesSnapshot.empty) {
+                    log('📋 No sales data found (collection may be empty)', 'info');
+                } else {
+                    log('✅ Found ' + salesSnapshot.size + ' sales records', 'success');
+                    
+                    salesSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        log('📦 Sale: ' + data.itemName + ' - ₹' + data.sellingPrice, 'info');
+                    });
+                }
+                
+            } catch (error) {
+                log('❌ Read failed: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-run on page load
+        window.onload = function() {
+            log('🚀 Firebase Final Test Loaded', 'info');
+            log('👆 Click "Test Basic Firebase" to start!', 'info');
+        };
+    </script>
+</body>
+</html>
