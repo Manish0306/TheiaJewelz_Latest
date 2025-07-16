@@ -3078,6 +3078,101 @@
             overflow: visible !important;
         }
 
+        /* Sales Table Styles */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .sales-table, .customer-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 13px;
+        }
+
+        .sales-table th, .customer-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 2px solid #e9ecef;
+            font-weight: 600;
+            font-size: 13px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sales-table td, .customer-table td {
+            padding: 12px 8px;
+            border-right: 1px solid #f0f0f0;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .sales-table tr:hover, .customer-table tr:hover {
+            background: #e3f2fd !important;
+        }
+
+        /* Customer Table Specific Styles */
+        .customer-table {
+            min-width: 1200px; /* Ensure table doesn't get too compressed */
+        }
+
+        .customer-table .status-active {
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .customer-table .status-inactive {
+            background: #f44336;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* Mobile responsive table */
+        @media (max-width: 768px) {
+            .sales-table, .customer-table {
+                font-size: 11px;
+            }
+            
+            .sales-table th, .customer-table th,
+            .sales-table td, .customer-table td {
+                padding: 8px 4px;
+                font-size: 11px;
+            }
+            
+            .sales-table th, .customer-table th {
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sales-table, .customer-table {
+                font-size: 10px;
+            }
+            
+            .sales-table th, .customer-table th,
+            .sales-table td, .customer-table td {
+                padding: 6px 3px;
+                font-size: 10px;
+            }
+            
+            .sales-table th, .customer-table th {
+                font-size: 10px;
+            }
+        }
+
         /* Sales and Purchase record items */
         .sale-record-item, .purchase-record-item {
             margin-bottom: 15px;
@@ -3263,11 +3358,7 @@
                 <i class="fas fa-cog"></i>
             </button>
             
-            <!-- Database Test Button -->
-            <button class="settings-btn" onclick="testFirebaseConnection()" title="Test Database Connection" 
-                    style="right: 60px; background: rgba(255,255,255,0.25);">
-                <i class="fas fa-database"></i>
-            </button>
+
             <div class="header-content">
                 <h1 class="app-title" id="app-title">💎 Theia Jewelz</h1>
                 <p class="subtitle">Modern Sales Management System</p>
@@ -3278,9 +3369,6 @@
         <div class="status-bar" style="background: var(--glass-bg); border-bottom: 1px solid var(--glass-border); padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; backdrop-filter: blur(10px);">
             <div id="database-status" class="database-status"></div>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <button onclick="quickTestFirebase()" style="background: #4ecdc4; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;" title="Test Firebase Connection">
-                    <i class="fas fa-vial"></i> Test DB
-                </button>
                 <div id="save-status" class="save-status"></div>
             </div>
         </div>
@@ -3418,9 +3506,6 @@
                         </div>
 
                         <div class="database-actions" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button class="btn btn-primary" onclick="testDatabaseConnection()">
-                                <i class="fas fa-plug"></i> Test Connection
-                            </button>
                             <button class="btn btn-secondary" onclick="syncLocalData()">
                                 <i class="fas fa-sync"></i> Sync Local Data
                             </button>
@@ -4490,7 +4575,7 @@
                 });
                 
                 console.log('✅ Firebase connection test successful:', testDoc.id);
-                alert('✅ Firebase connection successful! Document ID: ' + testDoc.id);
+                showDatabaseStatus('Firebase connection test successful', 'success');
                 
                 // Clean up test document after 5 seconds
                 setTimeout(async () => {
@@ -4580,18 +4665,10 @@
                             console.log('📱 Mobile Firebase initialization complete');
                         }
                         
-                        // Test connection after network is enabled
-                        setTimeout(() => {
-                            testFirebaseConnection();
-                        }, 1000);
+                        // Connection established - status will be shown in status bar
                     }).catch(err => {
                         console.error('❌ Firestore network error:', err);
-                        // Mobile-friendly error alert
-                        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                            alert('❌ Mobile Firebase Network Error: ' + err.message + '\n\nPlease check your internet connection and try again.');
-                        } else {
-                            alert('❌ Firestore network error: ' + err.message);
-                        }
+                        showDatabaseStatus('Connection error: ' + err.message, 'error');
                     });
                     
                     // Show connection status
@@ -4612,7 +4689,7 @@
                     return true;
                 }
                 
-                alert('❌ Firebase initialization failed: ' + error.message);
+                console.error('❌ Firebase initialization failed:', error);
                 showDatabaseStatus('Firebase connection failed', 'error');
                 return initializeLocalStorage();
             }
@@ -6021,6 +6098,45 @@
             }
         }
 
+        // Debug function to test display functions
+        function debugDisplayFunctions() {
+            console.log('🐛 Testing display functions...');
+            
+            try {
+                console.log('📊 Testing updateDashboard...');
+                updateDashboard();
+                console.log('✅ updateDashboard passed');
+            } catch (e) {
+                console.error('❌ updateDashboard failed:', e);
+            }
+            
+            try {
+                console.log('📋 Testing loadSalesRecords...');
+                loadSalesRecords();
+                console.log('✅ loadSalesRecords passed');
+            } catch (e) {
+                console.error('❌ loadSalesRecords failed:', e);
+            }
+            
+            try {
+                console.log('👥 Testing loadCustomers...');
+                loadCustomers();
+                console.log('✅ loadCustomers passed');
+            } catch (e) {
+                console.error('❌ loadCustomers failed:', e);
+            }
+            
+            try {
+                console.log('🔢 Testing updateCustomerCount...');
+                updateCustomerCount();
+                console.log('✅ updateCustomerCount passed');
+            } catch (e) {
+                console.error('❌ updateCustomerCount failed:', e);
+            }
+            
+            alert('Debug test completed - check console for details');
+        }
+
         // Quick Firebase test from status bar
         async function quickTestFirebase() {
             const btn = event.target;
@@ -6701,14 +6817,14 @@
 
             const totalCLV = customersData.reduce((sum, customer) => {
                 const customerSales = salesData.filter(sale => sale.customerName === customer.name);
-                const customerSpending = customerSales.reduce((total, sale) => total + sale.sellingPrice, 0);
+                const customerSpending = customerSales.reduce((total, sale) => total + (sale.sellingPrice || 0), 0);
                 return sum + customerSpending;
             }, 0);
 
             document.getElementById('stat-total-customers').textContent = totalCustomers;
             document.getElementById('stat-active-customers').textContent = activeCustomers;
             document.getElementById('stat-avg-orders').textContent = avgOrdersPerCustomer;
-            document.getElementById('stat-total-clv').textContent = `₹${totalCLV.toFixed(2)}`;
+            document.getElementById('stat-total-clv').textContent = `₹${(totalCLV || 0).toFixed(2)}`;
         }
 
         function filterCustomerDatabase() {
@@ -6780,7 +6896,30 @@
 
             noCustomersMessage.style.display = 'none';
 
-            container.innerHTML = currentPageData.map(customer => createCustomerCardHTML(customer)).join('');
+            // Create table format for customers
+            container.innerHTML = `
+                <div class="table-container" style="overflow-x: auto; border-radius: 8px; border: 1px solid #e9ecef; background: white;">
+                    <table class="customer-table" style="width: 100%; border-collapse: collapse; background: white;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 150px;">👤 Customer Name</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 120px;">📞 Phone</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 150px;">📧 Email</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 180px;">📍 Address</th>
+                                <th style="padding: 12px 8px; text-align: center; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">📊 Status</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">🛍️ Orders</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">💰 Total Spent</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">📈 Avg Order</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">📅 Last Purchase</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">🗓️ Added Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${currentPageData.map((customer, index) => createCustomerRowHTML(customer, index)).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
 
             // Update pagination
             updateCustomerPagination(currentCustomerPage, Math.ceil(totalCustomers / customersPerPage), totalCustomers);
@@ -6821,10 +6960,10 @@
             }
         }
 
-        function createCustomerCardHTML(customer) {
+        function createCustomerRowHTML(customer, index) {
             const customerSales = salesData.filter(sale => sale.customerName === customer.name);
             const totalPurchases = customerSales.length;
-            const totalSpent = customerSales.reduce((sum, sale) => sum + sale.sellingPrice, 0);
+            const totalSpent = customerSales.reduce((sum, sale) => sum + (sale.sellingPrice || 0), 0);
             const avgOrderValue = totalPurchases > 0 ? (totalSpent / totalPurchases) : 0;
             const lastPurchase = customerSales.length > 0 ?
                 Math.max(...customerSales.map(sale => new Date(sale.saleDate).getTime())) : null;
@@ -6832,58 +6971,45 @@
             const isActive = totalPurchases > 0;
             const statusClass = isActive ? 'active' : 'inactive';
             const statusText = isActive ? 'Active' : 'Inactive';
+            const statusColor = isActive ? '#4CAF50' : '#f44336';
 
             return `
-                <div class="customer-card">
-                    <div class="customer-card-header">
-                        <h4 class="customer-name">👤 ${customer.name}</h4>
-                        <span class="customer-status ${statusClass}">${statusText}</span>
-                    </div>
-
-                    <div class="customer-info-grid">
-                        <div class="customer-info-item">
-                            <span class="customer-info-label">📞 Phone:</span>
-                            ${customer.phone || 'Not provided'}
-                        </div>
-                        ${customer.email ? `
-                            <div class="customer-info-item">
-                                <span class="customer-info-label">📧 Email:</span>
-                                ${customer.email}
-                            </div>
-                        ` : ''}
-                        ${customer.address ? `
-                            <div class="customer-info-item">
-                                <span class="customer-info-label">📍 Address:</span>
-                                ${customer.address}
-                            </div>
-                        ` : ''}
-                        <div class="customer-info-item">
-                            <span class="customer-info-label">📅 Added:</span>
-                            ${new Date(customer.createdAt).toLocaleDateString()}
-                        </div>
-                    </div>
-
-                    <div class="customer-purchase-stats">
-                        <div class="customer-stat-item">
-                            <div class="customer-stat-value">${totalPurchases}</div>
-                            <div class="customer-stat-label">Total Orders</div>
-                        </div>
-                        <div class="customer-stat-item">
-                            <div class="customer-stat-value">₹${totalSpent.toFixed(2)}</div>
-                            <div class="customer-stat-label">Total Spent</div>
-                        </div>
-                        <div class="customer-stat-item">
-                            <div class="customer-stat-value">₹${avgOrderValue.toFixed(2)}</div>
-                            <div class="customer-stat-label">Avg Order</div>
-                        </div>
-                        <div class="customer-stat-item">
-                            <div class="customer-stat-value">
-                                ${lastPurchase ? new Date(lastPurchase).toLocaleDateString() : 'Never'}
-                            </div>
-                            <div class="customer-stat-label">Last Purchase</div>
-                        </div>
-                    </div>
-                </div>
+                <tr style="border-bottom: 1px solid #f8f9fa; transition: all 0.2s ease; background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};" 
+                    onmouseover="this.style.background='#e3f2fd'" 
+                    onmouseout="this.style.background='${index % 2 === 0 ? '#ffffff' : '#f8f9fa'}'">
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; font-weight: 500; color: #333; font-size: 13px;">
+                        ${customer.name}
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                        ${customer.phone || 'Not provided'}
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                        ${customer.email || 'Not provided'}
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                        ${customer.address || 'Not provided'}
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: center; font-size: 12px;">
+                        <span style="background: ${statusColor}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: #333; font-size: 12px; font-weight: 500;">
+                        ${totalPurchases}
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: #333; font-size: 12px; font-weight: 500;">
+                        ₹${(totalSpent || 0).toFixed(2)}
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: #333; font-size: 12px; font-weight: 500;">
+                        ₹${(avgOrderValue || 0).toFixed(2)}
+                    </td>
+                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                        ${lastPurchase ? new Date(lastPurchase).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Never'}
+                    </td>
+                    <td style="padding: 12px 8px; color: #666; font-size: 12px;">
+                        ${new Date(customer.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                </tr>
             `;
         }
 
@@ -7274,8 +7400,72 @@
                 return;
             }
 
-            // Display all filtered results
-            salesRecordsDiv.innerHTML = filteredSalesData.map(sale => createSaleItemHTML(sale)).join('');
+            // Display all filtered results in table format
+            salesRecordsDiv.innerHTML = `
+                <div class="table-container" style="overflow-x: auto; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <table class="sales-table" style="width: 100%; border-collapse: collapse; background: white;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 120px;">📦 Item</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">📂 Category</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 120px;">👤 Customer</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">📞 Phone</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 90px;">📅 Date</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">💰 Cost</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">💵 Selling</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">📈 Profit</th>
+                                <th style="padding: 12px 8px; text-align: center; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">⚙️ Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filteredSalesData.map((sale, index) => `
+                                <tr id="sale-item-${sale.id}" style="border-bottom: 1px solid #f8f9fa; transition: all 0.2s ease; background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};" 
+                                    onmouseover="this.style.background='#e3f2fd'" 
+                                    onmouseout="this.style.background='${index % 2 === 0 ? '#ffffff' : '#f8f9fa'}'">
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; font-weight: 500; color: #333; font-size: 13px;">
+                                        ${sale.itemName}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                                        ${sale.category}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #333; font-size: 12px;">
+                                        <div style="font-weight: 500;">${sale.customerName}</div>
+                                        ${sale.customerAddress && sale.customerAddress !== 'Not provided' ? 
+                                            `<div style="font-size: 10px; color: #888; margin-top: 2px;">📍 ${sale.customerAddress}</div>` : ''}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                                        ${sale.customerPhone}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                                        ${new Date(sale.saleDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: #333; font-size: 12px; font-weight: 500;">
+                                        ₹${(sale.costPrice || 0).toFixed(2)}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: #333; font-size: 12px; font-weight: 500;">
+                                        ₹${(sale.sellingPrice || 0).toFixed(2)}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: ${(sale.profit || 0) >= 0 ? '#4CAF50' : '#f44336'}; font-size: 12px; font-weight: 600;">
+                                        ₹${(sale.profit || 0).toFixed(2)}
+                                    </td>
+                                    <td style="padding: 12px 8px; text-align: center;">
+                                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                                            <button onclick="editSale(${sale.id})" title="Edit Sale" 
+                                                style="background: #2196F3; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s ease;"
+                                                onmouseover="this.style.background='#1976D2'" 
+                                                onmouseout="this.style.background='#2196F3'">✏️</button>
+                                            <button onclick="deleteSale(${sale.id})" title="Delete Sale" 
+                                                style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s ease;"
+                                                onmouseover="this.style.background='#d32f2f'" 
+                                                onmouseout="this.style.background='#f44336'">🗑️</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
             loadMoreContainer.style.display = 'none';
             noSalesMessage.style.display = 'none';
             document.getElementById('sales-count').textContent = filteredSalesData.length;
@@ -7296,14 +7486,14 @@
             const dataToUse = dataToSummarize || salesData;
 
             const totalSales = dataToUse.length;
-            const totalCost = dataToUse.reduce((sum, sale) => sum + sale.costPrice, 0);
-            const totalSelling = dataToUse.reduce((sum, sale) => sum + sale.sellingPrice, 0);
+            const totalCost = dataToUse.reduce((sum, sale) => sum + (sale.costPrice || 0), 0);
+            const totalSelling = dataToUse.reduce((sum, sale) => sum + (sale.sellingPrice || 0), 0);
             const totalProfit = totalSelling - totalCost;
 
             document.getElementById('summary-total-sales').textContent = totalSales;
-            document.getElementById('summary-total-cost').textContent = `₹${totalCost.toFixed(2)}`;
-            document.getElementById('summary-total-selling').textContent = `₹${totalSelling.toFixed(2)}`;
-            document.getElementById('summary-total-profit').textContent = `₹${totalProfit.toFixed(2)}`;
+            document.getElementById('summary-total-cost').textContent = `₹${(totalCost || 0).toFixed(2)}`;
+            document.getElementById('summary-total-selling').textContent = `₹${(totalSelling || 0).toFixed(2)}`;
+            document.getElementById('summary-total-profit').textContent = `₹${(totalProfit || 0).toFixed(2)}`;
         }
 
         function createSaleItemHTML(sale) {
@@ -7332,9 +7522,9 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 14px; color: #666;">
                         <p style="margin: 0;"><strong>📂 Category:</strong> ${sale.category}</p>
                         <p style="margin: 0;"><strong>📅 Date:</strong> ${formattedDate}</p>
-                        <p style="margin: 0;"><strong>💰 Cost:</strong> ₹${sale.costPrice.toFixed(2)}</p>
-                        <p style="margin: 0;"><strong>💵 Selling:</strong> ₹${sale.sellingPrice.toFixed(2)}</p>
-                        <p style="margin: 0;"><strong>📈 Profit:</strong> <span style="color: ${profitColor}; font-weight: bold;">₹${sale.profit.toFixed(2)}</span></p>
+                        <p style="margin: 0;"><strong>💰 Cost:</strong> ₹${(sale.costPrice || 0).toFixed(2)}</p>
+                        <p style="margin: 0;"><strong>💵 Selling:</strong> ₹${(sale.sellingPrice || 0).toFixed(2)}</p>
+                        <p style="margin: 0;"><strong>📈 Profit:</strong> <span style="color: ${profitColor}; font-weight: bold;">₹${(sale.profit || 0).toFixed(2)}</span></p>
                         <p style="margin: 0;"><strong>👤 Customer:</strong> ${sale.customerName}</p>
                     </div>
 
@@ -7405,7 +7595,7 @@
                         </div>
                     <div style="font-size: 11px; color: #4ecdc4; font-weight: 600;">
                             ${customer.totalPurchases > 0 ?
-                                `${customer.totalPurchases} purchase${customer.totalPurchases > 1 ? 's' : ''} • ₹${customer.totalSpent.toFixed(2)} total` :
+                                `${customer.totalPurchases} purchase${customer.totalPurchases > 1 ? 's' : ''} • ₹${(customer.totalSpent || 0).toFixed(2)} total` :
                                 'New customer'
                             }
                         </div>
@@ -7574,15 +7764,17 @@
 
         // Calculate profit automatically
         function calculateProfit() {
-            const costPrice = parseFloat(document.getElementById('costPrice').value) || 0;
-            const sellingPrice = parseFloat(document.getElementById('sellingPrice').value) || 0;
-            const profit = sellingPrice - costPrice;
+            try {
+                const costPrice = parseFloat(document.getElementById('costPrice').value) || 0;
+                const sellingPrice = parseFloat(document.getElementById('sellingPrice').value) || 0;
+                const profit = sellingPrice - costPrice;
 
-            const profitField = document.getElementById('profit');
-            const profitDisplay = document.getElementById('profit-display');
-            const profitMargin = document.getElementById('profit-margin');
+                const profitField = document.getElementById('profit');
+                const profitDisplay = document.getElementById('profit-display');
+                const profitMargin = document.getElementById('profit-margin');
 
-            profitField.value = profit.toFixed(2);
+                // Safe toFixed with fallback
+                profitField.value = (profit && !isNaN(profit) && isFinite(profit)) ? profit.toFixed(2) : '0.00';
 
             // Calculate profit margin percentage
             let marginPercentage = 0;
@@ -7592,7 +7784,7 @@
 
             // Update profit margin display
             if (profitMargin) {
-                profitMargin.textContent = marginPercentage.toFixed(1) + '%';
+                profitMargin.textContent = (marginPercentage && !isNaN(marginPercentage) && isFinite(marginPercentage)) ? marginPercentage.toFixed(1) + '%' : '0.0%';
             }
 
             // Show/hide profit display
@@ -7651,18 +7843,40 @@
             setTimeout(() => {
                 profitField.style.transform = 'scale(1)';
             }, 200);
+            
+            } catch (error) {
+                console.error('Error calculating profit:', error);
+                // Set default values on error
+                document.getElementById('profit').value = '0.00';
+                if (document.getElementById('profit-margin')) {
+                    document.getElementById('profit-margin').textContent = '0.0%';
+                }
+            }
         }
 
         // Add sale record function
         function addSaleRecord() {
             try {
-                // Get form values
+                // Get form values with safe parsing
                 const itemName = document.getElementById('itemName').value.trim();
-                const costPrice = parseFloat(document.getElementById('costPrice').value);
-                const sellingPrice = parseFloat(document.getElementById('sellingPrice').value);
+                const costPriceValue = document.getElementById('costPrice').value;
+                const sellingPriceValue = document.getElementById('sellingPrice').value;
+                const costPrice = parseFloat(costPriceValue) || 0;
+                const sellingPrice = parseFloat(sellingPriceValue) || 0;
                 const saleDate = document.getElementById('saleDate').value;
                 const customerName = document.getElementById('customerName').value.trim();
                 const customerPhone = document.getElementById('customerPhone').value.trim();
+                
+                // Debug log for troubleshooting
+                console.log('Form values:', {
+                    itemName,
+                    costPriceValue,
+                    sellingPriceValue,
+                    costPrice,
+                    sellingPrice,
+                    saleDate,
+                    customerName
+                });
                 const customerAddress = document.getElementById('customerAddress').value.trim();
 
                 // Validate required fields with alerts
@@ -7678,13 +7892,13 @@
                     document.getElementById('category-error').style.display = 'flex';
                     return;
                 }
-                if (!costPrice || isNaN(costPrice) || costPrice < 0) {
+                if (!costPriceValue || isNaN(costPrice) || costPrice <= 0) {
                     showError('Please enter a valid cost price');
                     alert('⚠️ Validation Error:\nPlease enter a valid cost price (must be greater than 0).');
                     document.getElementById('costPrice').focus();
                     return;
                 }
-                if (!sellingPrice || isNaN(sellingPrice) || sellingPrice < 0) {
+                if (!sellingPriceValue || isNaN(sellingPrice) || sellingPrice <= 0) {
                     showError('Please enter a valid selling price');
                     alert('⚠️ Validation Error:\nPlease enter a valid selling price (must be greater than 0).');
                     document.getElementById('sellingPrice').focus();
@@ -7713,20 +7927,26 @@
                 saveCustomerFromSale(customerName, customerPhone, customerAddress);
 
                 // Create sale record with multiple categories
-                const saleRecord = {
+                const calculatedProfit = (sellingPrice && costPrice) ? sellingPrice - costPrice : 0;
+                
+                // Ensure all numeric values are valid
+                const safeRecord = {
                     id: Date.now(),
                     itemName: itemName,
                     category: selectedCategories.join(', '), // Join multiple categories with comma
                     categories: selectedCategories, // Keep array for advanced filtering
-                    costPrice: costPrice,
-                    sellingPrice: sellingPrice,
-                    profit: sellingPrice - costPrice,
+                    costPrice: parseFloat(costPrice) || 0,
+                    sellingPrice: parseFloat(sellingPrice) || 0,
+                    profit: parseFloat(calculatedProfit) || 0,
                     saleDate: saleDate,
                     customerName: customerName,
                     customerPhone: customerPhone || 'Not provided',
                     customerAddress: customerAddress || 'Not provided',
                     createdAt: new Date().toISOString()
                 };
+                
+                console.log('✅ Sale record created:', safeRecord);
+                const saleRecord = safeRecord;
 
                 // Add to array
                 salesData.push(saleRecord);
@@ -7769,15 +7989,33 @@
                 // Reset sales display to show latest sales
                 resetSalesDisplay();
 
-                // Refresh displays
-                loadSalesRecords();
-                updateDashboard();
-                loadCustomers();
-                updateCustomerCount();
+                // Refresh displays with error handling
+                try {
+                    console.log('🔄 Refreshing displays...');
+                    loadSalesRecords();
+                    console.log('✅ Sales records loaded');
+                    updateDashboard();
+                    console.log('✅ Dashboard updated');
+                    loadCustomers();
+                    console.log('✅ Customers loaded');
+                    updateCustomerCount();
+                    console.log('✅ Customer count updated');
+                } catch (displayError) {
+                    console.error('❌ Display refresh error:', displayError);
+                    console.error('❌ Error stack:', displayError.stack);
+                    // Continue with success message even if display refresh fails
+                }
 
                 // Show success message
                 showSuccess('✅ Sale record added successfully! Customer saved to database.');
-                alert('✅ Success!\n\nSale record has been added successfully!\n\n📊 Details:\n• Item: ' + itemName + '\n• Categories: ' + selectedCategories.join(', ') + '\n• Customer: ' + customerName + '\n• Profit: ₹' + (sellingPrice - costPrice).toFixed(2));
+                
+                // Calculate profit safely
+                const profit = (sellingPrice && costPrice) ? sellingPrice - costPrice : 0;
+                const profitText = (!isNaN(profit) && isFinite(profit)) ? profit.toFixed(2) : '0.00';
+                
+                console.log('🎉 About to show success alert...');
+                alert('✅ Success!\n\nSale record has been added successfully!\n\n📊 Details:\n• Item: ' + itemName + '\n• Categories: ' + selectedCategories.join(', ') + '\n• Customer: ' + customerName + '\n• Profit: ₹' + profitText);
+                console.log('✅ Success alert shown successfully');
 
             } catch (error) {
                 console.error('Error adding sale:', error);
@@ -7912,14 +8150,14 @@
 
             // Update summary
             const totalSales = salesData.length;
-            const totalCost = salesData.reduce((sum, sale) => sum + sale.costPrice, 0);
-            const totalSelling = salesData.reduce((sum, sale) => sum + sale.sellingPrice, 0);
-            const totalProfit = salesData.reduce((sum, sale) => sum + sale.profit, 0);
+            const totalCost = salesData.reduce((sum, sale) => sum + (sale.costPrice || 0), 0);
+            const totalSelling = salesData.reduce((sum, sale) => sum + (sale.sellingPrice || 0), 0);
+            const totalProfit = salesData.reduce((sum, sale) => sum + (sale.profit || 0), 0);
 
             document.getElementById('summary-total-sales').textContent = totalSales;
-            document.getElementById('summary-total-cost').textContent = `₹${totalCost.toFixed(2)}`;
-            document.getElementById('summary-total-selling').textContent = `₹${totalSelling.toFixed(2)}`;
-            document.getElementById('summary-total-profit').textContent = `₹${totalProfit.toFixed(2)}`;
+            document.getElementById('summary-total-cost').textContent = `₹${(totalCost || 0).toFixed(2)}`;
+            document.getElementById('summary-total-selling').textContent = `₹${(totalSelling || 0).toFixed(2)}`;
+            document.getElementById('summary-total-profit').textContent = `₹${(totalProfit || 0).toFixed(2)}`;
             summaryDiv.style.display = 'block';
 
             // Update daily sales report
@@ -7931,25 +8169,72 @@
             const salesToShow = recentSales.slice(0, displayedSalesCount);
             const loadMoreContainer = document.getElementById('load-more-container');
 
-            container.innerHTML = salesToShow.map(sale => `
-                <div class="sales-item" id="sale-item-${sale.id}">
-                    <div class="action-buttons">
-                        <button class="edit-btn" onclick="editSale(${sale.id})" title="Edit Sale">✏️</button>
-                        <button class="delete-btn" onclick="deleteSale(${sale.id})" title="Delete Sale">🗑️</button>
-                    </div>
-                    <h4>${sale.itemName}</h4>
-                    <p><strong>Category:</strong> ${sale.category}</p>
-                    <p><strong>Customer:</strong> ${sale.customerName}</p>
-                    <p><strong>Phone:</strong> ${sale.customerPhone}</p>
-                    ${sale.customerAddress && sale.customerAddress !== 'Not provided' ? `<p><strong>Address:</strong> ${sale.customerAddress}</p>` : ''}
-                    <p><strong>Date:</strong> ${new Date(sale.saleDate).toLocaleDateString()}</p>
-                    <p><strong>Cost:</strong> ₹${sale.costPrice.toFixed(2)}</p>
-                    <p><strong>Selling Price:</strong> ₹${sale.sellingPrice.toFixed(2)}</p>
-                    <p style="color: ${sale.profit >= 0 ? '#4ecdc4' : '#ff6b6b'}; font-weight: bold;">
-                        <strong>Profit:</strong> ₹${sale.profit.toFixed(2)}
-                    </p>
+            // Create table format
+            container.innerHTML = `
+                <div class="table-container" style="overflow-x: auto; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <table class="sales-table" style="width: 100%; border-collapse: collapse; background: white;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 120px;">📦 Item</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">📂 Category</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 120px;">👤 Customer</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 100px;">📞 Phone</th>
+                                <th style="padding: 12px 8px; text-align: left; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 90px;">📅 Date</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">💰 Cost</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">💵 Selling</th>
+                                <th style="padding: 12px 8px; text-align: right; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">📈 Profit</th>
+                                <th style="padding: 12px 8px; text-align: center; border-bottom: 2px solid #e9ecef; font-weight: 600; font-size: 13px; min-width: 80px;">⚙️ Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${salesToShow.map((sale, index) => `
+                                <tr id="sale-item-${sale.id}" style="border-bottom: 1px solid #f8f9fa; transition: all 0.2s ease; background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'};" 
+                                    onmouseover="this.style.background='#e3f2fd'" 
+                                    onmouseout="this.style.background='${index % 2 === 0 ? '#ffffff' : '#f8f9fa'}'">
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; font-weight: 500; color: #333; font-size: 13px;">
+                                        ${sale.itemName}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                                        ${sale.category}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #333; font-size: 12px;">
+                                        <div style="font-weight: 500;">${sale.customerName}</div>
+                                        ${sale.customerAddress && sale.customerAddress !== 'Not provided' ? 
+                                            `<div style="font-size: 10px; color: #888; margin-top: 2px;">📍 ${sale.customerAddress}</div>` : ''}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                                        ${sale.customerPhone}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; color: #666; font-size: 12px;">
+                                        ${new Date(sale.saleDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: #333; font-size: 12px; font-weight: 500;">
+                                        ₹${(sale.costPrice || 0).toFixed(2)}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: #333; font-size: 12px; font-weight: 500;">
+                                        ₹${(sale.sellingPrice || 0).toFixed(2)}
+                                    </td>
+                                    <td style="padding: 12px 8px; border-right: 1px solid #f0f0f0; text-align: right; color: ${(sale.profit || 0) >= 0 ? '#4CAF50' : '#f44336'}; font-size: 12px; font-weight: 600;">
+                                        ₹${(sale.profit || 0).toFixed(2)}
+                                    </td>
+                                    <td style="padding: 12px 8px; text-align: center;">
+                                        <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+                                            <button onclick="editSale(${sale.id})" title="Edit Sale" 
+                                                style="background: #2196F3; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s ease;"
+                                                onmouseover="this.style.background='#1976D2'" 
+                                                onmouseout="this.style.background='#2196F3'">✏️</button>
+                                            <button onclick="deleteSale(${sale.id})" title="Delete Sale" 
+                                                style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; transition: all 0.2s ease;"
+                                                onmouseover="this.style.background='#d32f2f'" 
+                                                onmouseout="this.style.background='#f44336'">🗑️</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
-            `).join('');
+            `;
 
             // Show/hide Load More button
             if (recentSales.length > displayedSalesCount) {
