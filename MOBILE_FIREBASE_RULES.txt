@@ -1,0 +1,57 @@
+Firebase Security Rules for Mobile & PWA Support
+===============================================
+
+COPY AND PASTE THIS INTO FIREBASE CONSOLE → FIRESTORE DATABASE → RULES
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow all reads and writes for mobile and web
+    // This is necessary for GitHub Pages, mobile browsers, and PWAs
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+
+IMPORTANT INSTRUCTIONS:
+1. Go to Firebase Console: https://console.firebase.google.com/
+2. Select your project: theiajewelz
+3. Click "Firestore Database" in the left menu
+4. Click "Rules" tab
+5. Replace existing rules with the above code
+6. Click "Publish"
+
+WHY THIS FIXES MOBILE ISSUES:
+- Removes authentication requirements
+- Allows access from any domain (GitHub Pages, mobile browsers, PWAs)
+- No CORS restrictions
+- Works with service workers
+
+SECURITY NOTE:
+This allows public read/write access. For production apps, implement proper authentication.
+
+ALTERNATIVE RULES WITH DOMAIN RESTRICTION:
+==========================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if 
+        request.auth != null ||
+        request.headers.origin.matches(".*github.io.*") ||
+        request.headers.origin.matches(".*githubusercontent.com.*") ||
+        resource.data.domain.matches(".*github.io.*") ||
+        resource.data.domain == "localhost";
+    }
+  }
+}
+
+VERIFICATION:
+After updating rules, test by:
+1. Opening the app on mobile
+2. Adding a test sale
+3. Checking Firebase Console for the new data
+4. Using the "Test Firebase Connection" button in settings
+
+The rules should take effect immediately after publishing.

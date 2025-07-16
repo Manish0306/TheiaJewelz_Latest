@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Firebase Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            font-size: 14px;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .info {
+            background: #e2e3e5;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .mobile-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .step {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="mobile-icon">📱</span>Mobile Firebase Debug Test</h1>
+        
+        <div class="step">
+            <strong>Step 1:</strong> Test Firebase connection from mobile device
+        </div>
+        
+        <div id="deviceInfo" class="info">
+            <strong>Device Info:</strong>
+            <div>Domain: <span id="domain"></span></div>
+            <div>Origin: <span id="origin"></span></div>
+            <div>User Agent: <span id="userAgent"></span></div>
+            <div>Mobile: <span id="isMobile"></span></div>
+            <div>Online: <span id="online"></span></div>
+            <div>Connection: <span id="connection"></span></div>
+        </div>
+        
+        <button onclick="testFirebaseWrite()">🔥 Test Firebase Write</button>
+        <button onclick="testFirebaseRead()">📖 Test Firebase Read</button>
+        <button onclick="testSaleData()">💰 Test Sale Data Write</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+        
+        <div class="step">
+            <strong>Step 2:</strong> Check results below and Firebase Console
+        </div>
+        
+        <div id="results"></div>
+        
+        <div class="step">
+            <strong>If tests fail:</strong>
+            <ol>
+                <li>Update Firebase Security Rules (see MOBILE_FIREBASE_RULES.txt)</li>
+                <li>Add your domain to Firebase authorized domains</li>
+                <li>Check internet connection</li>
+                <li>Clear browser cache and try again</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBEbRfCjqEOfoLTdrCPCuGHVRIOBPIUEIg",
+            authDomain: "theiajewelz.firebaseapp.com",
+            projectId: "theiajewelz",
+            storageBucket: "theiajewelz.firebasestorage.app",
+            messagingSenderId: "328369793227",
+            appId: "1:328369793227:web:03c7cbf22b3c2f05cdd34e",
+            measurementId: "G-1BKG612HJG"
+        };
+
+        // Initialize Firebase
+        let app, firestore;
+        
+        function initFirebase() {
+            try {
+                app = firebase.initializeApp(firebaseConfig);
+                firestore = firebase.firestore();
+                
+                // Mobile-specific settings
+                if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                    firestore.enablePersistence({ synchronizeTabs: true }).catch(err => {
+                        console.log('Persistence failed:', err);
+                    });
+                }
+                
+                firestore.settings({
+                    cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+                    ignoreUndefinedProperties: true
+                });
+                
+                addResult('✅ Firebase initialized successfully', 'success');
+            } catch (error) {
+                addResult('❌ Firebase initialization failed: ' + error.message, 'error');
+            }
+        }
+
+        function addResult(message, type = 'result') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testFirebaseWrite() {
+            if (!firestore) {
+                addResult('❌ Firebase not initialized', 'error');
+                return;
+            }
+            
+            try {
+                addResult('🔄 Testing Firebase write...', 'warning');
+                
+                const testData = {
+                    test: 'mobile-debug-test',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    domain: window.location.hostname,
+                    origin: window.location.origin,
+                    userAgent: navigator.userAgent,
+                    isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+                    connectionType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
+                    testTime: new Date().toISOString()
+                };
+                
+                const docRef = await firestore.collection('mobile-debug-test').add(testData);
+                addResult('✅ Firebase write successful! Document ID: ' + docRef.id, 'success');
+                
+                // Clean up after 10 seconds
+                setTimeout(async () => {
+                    try {
+                        await docRef.delete();
+                        addResult('🗑️ Test document cleaned up', 'result');
+                    } catch (e) {
+                        addResult('⚠️ Could not clean up test document: ' + e.message, 'warning');
+                    }
+                }, 10000);
+                
+            } catch (error) {
+                addResult('❌ Firebase write failed: ' + error.message, 'error');
+                if (error.code === 'permission-denied') {
+                    addResult('⚠️ Permission denied - update Firebase security rules', 'warning');
+                }
+            }
+        }
+
+        async function testFirebaseRead() {
+            if (!firestore) {
+                addResult('❌ Firebase not initialized', 'error');
+                return;
+            }
+            
+            try {
+                addResult('🔄 Testing Firebase read...', 'warning');
+                
+                const snapshot = await firestore.collection('mobile-debug-test').limit(5).get();
+                addResult('✅ Firebase read successful. Found ' + snapshot.size + ' documents', 'success');
+                
+            } catch (error) {
+                addResult('❌ Firebase read failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testSaleData() {
+            if (!firestore) {
+                addResult('❌ Firebase not initialized', 'error');
+                return;
+            }
+            
+            try {
+                addResult('🔄 Testing sale data write...', 'warning');
+                
+                const saleData = {
+                    customerName: 'Mobile Test Customer',
+                    phoneNumber: '1234567890',
+                    items: [
+                        {
+                            itemName: 'Test Ring',
+                            weight: 5.5,
+                            purity: '18K',
+                            category: 'Rings',
+                            rate: 5000,
+                            amount: 27500
+                        }
+                    ],
+                    totalAmount: 27500,
+                    paymentMethod: 'Cash',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    domain: window.location.hostname,
+                    origin: window.location.origin,
+                    userAgent: navigator.userAgent,
+                    isMobile: /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+                    testData: true
+                };
+                
+                const docRef = await firestore.collection('sales').add(saleData);
+                addResult('✅ Sale data write successful! Document ID: ' + docRef.id, 'success');
+                addResult('📊 Check Firebase Console → Firestore → sales collection', 'result');
+                
+            } catch (error) {
+                addResult('❌ Sale data write failed: ' + error.message, 'error');
+                if (error.code === 'permission-denied') {
+                    addResult('⚠️ Permission denied - update Firebase security rules', 'warning');
+                }
+            }
+        }
+
+        // Initialize page
+        window.onload = function() {
+            // Display device info
+            document.getElementById('domain').textContent = window.location.hostname;
+            document.getElementById('origin').textContent = window.location.origin;
+            document.getElementById('userAgent').textContent = navigator.userAgent;
+            document.getElementById('isMobile').textContent = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'Yes' : 'No';
+            document.getElementById('online').textContent = navigator.onLine ? 'Yes' : 'No';
+            document.getElementById('connection').textContent = navigator.connection ? navigator.connection.effectiveType : 'Unknown';
+            
+            // Initialize Firebase
+            initFirebase();
+        };
+    </script>
+</body>
+</html>
