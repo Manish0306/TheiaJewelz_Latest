@@ -3295,6 +3295,15 @@
             .sales-table th, .customer-table th {
                 font-size: 11px;
             }
+
+            /* Hide table on mobile and show mobile cards instead */
+            .table-container {
+                display: none;
+            }
+
+            .mobile-list-container {
+                display: block;
+            }
         }
 
         @media (max-width: 480px) {
@@ -3310,6 +3319,186 @@
 
             .sales-table th, .customer-table th {
                 font-size: 10px;
+            }
+
+            /* Hide table on mobile and show mobile cards instead */
+            .table-container {
+                display: none;
+            }
+
+            .mobile-list-container {
+                display: block;
+            }
+        }
+
+        /* Mobile List/Card Styles */
+        .mobile-list-container {
+            display: none; /* Hidden by default, shown on mobile */
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .mobile-list-item {
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 16px;
+            transition: background-color 0.2s ease;
+            position: relative;
+        }
+
+        .mobile-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-list-item:hover {
+            background: #f8f9fa;
+        }
+
+        .mobile-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .mobile-item-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+            margin: 0;
+            flex: 1;
+            margin-right: 12px;
+        }
+
+        .mobile-item-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .mobile-item-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .mobile-item-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mobile-item-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .mobile-item-value {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .mobile-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .mobile-action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .mobile-action-btn.primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .mobile-action-btn.primary:hover {
+            background: #0056b3;
+        }
+
+        .mobile-action-btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .mobile-action-btn.secondary:hover {
+            background: #545b62;
+        }
+
+        .mobile-action-btn.danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .mobile-action-btn.danger:hover {
+            background: #c82333;
+        }
+
+        /* Mobile No Data State */
+        .mobile-no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-style: italic;
+        }
+
+        .mobile-no-data i {
+            font-size: 48px;
+            color: #ddd;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .mobile-no-data h4 {
+            margin: 0 0 8px 0;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .mobile-no-data p {
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* Desktop: show table, hide mobile list */
+        @media (min-width: 769px) {
+            .table-container {
+                display: block;
+            }
+
+            .mobile-list-container {
+                display: none;
             }
         }
 
@@ -4454,6 +4643,18 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Mobile Sales Summary List -->
+                    <div class="mobile-list-container">
+                        <div id="mobile-sales-list">
+                            <!-- Mobile list items will be populated by JavaScript -->
+                        </div>
+                        <div id="mobile-no-summary-data" class="mobile-no-data" style="display: none;">
+                            <i class="fas fa-inbox"></i>
+                            <h4>No Sales Data Found</h4>
+                            <p>Add your first sale or adjust the search filters</p>
+                        </div>
                     </div>
 
                     <!-- Pagination for Summary Table -->
